@@ -1,0 +1,11 @@
+{
+  "face_sound_1": {
+    "sounds": ["tekilo:face_sound_1"]
+  },
+  "face_sound_2": {
+    "sounds": ["tekilo:face_sound_2"]
+  },
+  "face_sound_3": {
+    "sounds": ["tekilo:face_sound_3"]
+  }
+}

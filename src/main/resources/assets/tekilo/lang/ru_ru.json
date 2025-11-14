@@ -1,0 +1,11 @@
+{
+  "death.attack.sold_out": "%1$s продался",
+  "death.attack.sold_soul": "%1$s продал душу",
+  "death.attack.gave_to_party": "%1$s отдался партии",
+  "death.attack.kissed_vovchik": "%1$s поцеловал Вовчика",
+  "death.attack.kissed_stalin": "%1$s поцеловал Сталина",
+  "death.attack.kissed_lenin": "%1$s поцеловал Ленина",
+  "death.attack.went_to_svo": "%1$s пошёл на СВО",
+  "item.tekilo.party_card": "Партийный билет",
+  "item.tekilo.tax_bill": "Счет на оплату налогов"
+}

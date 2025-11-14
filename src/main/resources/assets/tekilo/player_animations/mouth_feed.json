@@ -1,0 +1,169 @@
+{
+    "name": "mouth_feed",
+    "author": "tekilo",
+    "description": "Converted from GeckoLib animation 'animation'",
+    "emote": {
+        "isLoop": "false",
+        "returnTick": 10,
+        "beginTick": 0,
+        "endTick": 11,
+        "stopTick": 46,
+        "degrees": false,
+        "moves": [
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "torso": {}
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "head": {}
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "rightArm": {}
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "leftArm": {}
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "rightLeg": {}
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "leftLeg": {}
+            },
+            {
+                "tick": 5,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "torso": {
+                    "y": -9
+                }
+            },
+            {
+                "tick": 5,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9
+                }
+            },
+            {
+                "tick": 5,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "rightArm": {
+                    "y": -9
+                }
+            },
+            {
+                "tick": 5,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "leftArm": {
+                    "y": -9
+                }
+            },
+            {
+                "tick": 5,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "rightLeg": {
+                    "y": -10,
+                    "pitch": 1.5707963267948966
+                }
+            },
+            {
+                "tick": 5,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "leftLeg": {
+                    "y": -10,
+                    "pitch": 1.5707963267948966
+                }
+            },
+            {
+                "tick": 10,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "rightArm": {
+                    "pitch": -1.7453292519943295
+                }
+            },
+            {
+                "tick": 10,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "leftArm": {
+                    "pitch": -1.7453292519943295
+                }
+            },
+            {
+                "tick": 15,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9,
+                    "z": -2
+                }
+            },
+            {
+                "tick": 20,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9
+                }
+            },
+            {
+                "tick": 25,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9,
+                    "z": -2
+                }
+            },
+            {
+                "tick": 30,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9,
+                    "z": 1
+                }
+            },
+            {
+                "tick": 35,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9,
+                    "z": -2
+                }
+            },
+            {
+                "tick": 40,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "y": -9
+                }
+            }
+        ]
+    }
+}

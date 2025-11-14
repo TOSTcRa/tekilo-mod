@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"id": "tekilo",
+	"version": "${version}",
+	"name": "Tekilo mod",
+	"description": "This is an tekilo mod! Adds a lot of cool features like a statue of stalin, photos of the legend of Brovary and more!",
+	"authors": [
+		"tostcr",
+        "tekilo"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/tekilo/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.tekilo.TekiloMod"
+		],
+		"client": [
+			"com.tekilo.FaceFlashClientMod"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.17.3",
+		"minecraft": "~1.21.6",
+		"java": ">=21",
+		"fabric-api": "*",
+		"player-animator": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

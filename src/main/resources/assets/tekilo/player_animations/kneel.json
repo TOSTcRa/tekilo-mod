@@ -1,0 +1,120 @@
+{
+    "name": "kneel",
+    "author": "tekilo",
+    "description": "Player kneels down animation",
+    "emote": {
+        "isLoop": "false",
+        "returnTick": 10,
+        "beginTick": 0,
+        "endTick": 10,
+        "stopTick": 60,
+        "degrees": false,
+        "moves": [
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "torso": {
+                    "y": 0.0,
+                    "pitch": 0.0
+                }
+            },
+            {
+                "tick": 10,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "torso": {
+                    "y": -6.0,
+                    "pitch": 0.1
+                }
+            },
+            {
+                "tick": 60,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "torso": {
+                    "y": -6.0,
+                    "pitch": 0.1
+                }
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "rightLeg": {
+                    "pitch": 0.0,
+                    "y": 12.0
+                }
+            },
+            {
+                "tick": 10,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "rightLeg": {
+                    "pitch": -1.57,
+                    "y": 6.0
+                }
+            },
+            {
+                "tick": 60,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "rightLeg": {
+                    "pitch": -1.57,
+                    "y": 6.0
+                }
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "leftLeg": {
+                    "pitch": 0.0,
+                    "y": 12.0
+                }
+            },
+            {
+                "tick": 10,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "leftLeg": {
+                    "pitch": -1.57,
+                    "y": 6.0
+                }
+            },
+            {
+                "tick": 60,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "leftLeg": {
+                    "pitch": -1.57,
+                    "y": 6.0
+                }
+            },
+            {
+                "tick": 0,
+                "easing": "LINEAR",
+                "turn": 0,
+                "head": {
+                    "pitch": 0.0
+                }
+            },
+            {
+                "tick": 10,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "pitch": -0.2
+                }
+            },
+            {
+                "tick": 60,
+                "easing": "EASEINOUTQUAD",
+                "turn": 0,
+                "head": {
+                    "pitch": -0.2
+                }
+            }
+        ]
+    }
+}
