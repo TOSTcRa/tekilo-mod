@@ -31,6 +31,10 @@ public class TekiloMod implements ModInitializer {
         // Регистрация обработчиков событий сервера
         ServerEventHandler.register();
 
+        // Регистрация команд
+        FactionCommand.register();
+        TellInfoCommand.register();
+
         System.out.println("[TekiloMod] Mod initialized!");
     }
 }

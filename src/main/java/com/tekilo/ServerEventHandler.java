@@ -9,9 +9,10 @@ public class ServerEventHandler {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             FactionManager.syncToClient(handler.getPlayer());
 
-            // Добавляем игрока в команду на основе его фракции
+            // Добавляем игрока в команду на основе его фракции и типа
             FactionManager.Faction faction = FactionManager.getPlayerFaction(handler.getPlayer().getUuid());
-            TeamManager.addPlayerToTeam(server, handler.getPlayer(), faction);
+            boolean isSpy = FactionManager.isSpy(handler.getPlayer().getUuid());
+            TeamManager.addPlayerToTeam(server, handler.getPlayer(), faction, isSpy);
         });
 
         // Загрузка фракций и инициализация команд при старте сервера
@@ -28,7 +29,8 @@ public class ServerEventHandler {
         // Сохранение фракций при остановке сервера
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             FactionPersistence.save(server);
-            System.out.println("[TekiloMod] Factions saved to file");
+            SpyLeakNotifier.shutdown();
+            System.out.println("[TekiloMod] Factions saved to file and SpyLeakNotifier shutdown");
         });
 
         // Периодическое сохранение фракций (каждые 5 минут)

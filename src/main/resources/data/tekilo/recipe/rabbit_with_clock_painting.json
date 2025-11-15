@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:painting",
+    "#minecraft:planks"
+  ],
+  "result": {
+    "id": "tekilo:rabbit_clock_painting"
+  }
+}

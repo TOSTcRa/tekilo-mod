@@ -2,16 +2,28 @@
   "face_sound_1": {
     "sounds": [
       "tekilo:face_sound_1"
-    ]
+    ],
+    "subtitle": "subtitles.tekilo.face_sound_1"
   },
   "face_sound_2": {
     "sounds": [
       "tekilo:face_sound_2"
-    ]
+    ],
+    "subtitle": "subtitles.tekilo.face_sound_2"
   },
   "face_sound_3": {
     "sounds": [
       "tekilo:face_sound_3"
-    ]
+    ],
+    "subtitle": "subtitles.tekilo.face_sound_3"
+  },
+  "music_disc.sound_1": {
+    "sounds": [
+      {
+        "name": "tekilo:sound_1",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.tekilo.music_disc.sound_1"
   }
 }

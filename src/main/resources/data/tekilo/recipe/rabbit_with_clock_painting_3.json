@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:painting",
+    "minecraft:iron_ingot"
+  ],
+  "result": {
+    "id": "tekilo:rabbit_clock_painting_3"
+  }
+}

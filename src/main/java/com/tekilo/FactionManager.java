@@ -15,7 +15,13 @@ public class FactionManager {
         NONE
     }
 
+    public enum PlayerType {
+        NORMAL,
+        SPY
+    }
+
     private static final Map<UUID, Faction> playerFactions = new HashMap<>();
+    private static final Map<UUID, PlayerType> playerTypes = new HashMap<>();
 
     public static void setPlayerFaction(UUID playerId, Faction faction) {
         playerFactions.put(playerId, faction);
@@ -41,5 +47,27 @@ public class FactionManager {
         Faction faction = getPlayerFaction(player.getUuid());
         FactionSyncPayload payload = new FactionSyncPayload(faction.name());
         ServerPlayNetworking.send(player, payload);
+    }
+
+    // Методы для работы со шпионами
+    public static void setPlayerType(UUID playerId, PlayerType type) {
+        playerTypes.put(playerId, type);
+    }
+
+    public static PlayerType getPlayerType(UUID playerId) {
+        return playerTypes.getOrDefault(playerId, PlayerType.NORMAL);
+    }
+
+    public static boolean isSpy(UUID playerId) {
+        return getPlayerType(playerId) == PlayerType.SPY;
+    }
+
+    public static void setPlayerAsSpy(UUID playerId, Faction faction) {
+        setPlayerFaction(playerId, faction);
+        setPlayerType(playerId, PlayerType.SPY);
+    }
+
+    public static Map<UUID, PlayerType> getAllPlayerTypes() {
+        return new HashMap<>(playerTypes);
     }
 }

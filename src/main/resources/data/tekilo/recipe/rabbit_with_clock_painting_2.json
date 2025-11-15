@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:painting",
+    ["minecraft:cobblestone", "minecraft:stone"]
+  ],
+  "result": {
+    "id": "tekilo:rabbit_clock_painting_2"
+  }
+}

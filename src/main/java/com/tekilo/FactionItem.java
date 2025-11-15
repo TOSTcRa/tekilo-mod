@@ -22,14 +22,14 @@ public class FactionItem extends Item {
 
         if (!world.isClient() && user instanceof ServerPlayerEntity serverPlayer) {
             FactionManager.Faction faction;
-            String message;
+            String translationKey;
 
             if (this == ModItems.PARTY_CARD) {
                 faction = FactionManager.Faction.COMMUNIST;
-                message = "welcome to the club buddy";
+                translationKey = "item.tekilo.party_card.use";
             } else if (this == ModItems.TAX_BILL) {
                 faction = FactionManager.Faction.CAPITALIST;
-                message = "вы теперь жадный еврей капиталюга, всю свою оставшуюся жизнь у вас будут кудри на лобке";
+                translationKey = "item.tekilo.tax_bill.use";
             } else {
                 return ActionResult.PASS;
             }
@@ -46,7 +46,7 @@ public class FactionItem extends Item {
                 FactionPersistence.save(server);
             }
 
-            user.sendMessage(Text.literal(message), false);
+            user.sendMessage(Text.translatable(translationKey), false);
 
             if (!user.getAbilities().creativeMode) {
                 itemStack.decrement(1);

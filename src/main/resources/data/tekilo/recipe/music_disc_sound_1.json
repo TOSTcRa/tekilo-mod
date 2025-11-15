@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DDD",
+    "DSD",
+    "DDD"
+  ],
+  "key": {
+    "D": "minecraft:dirt",
+    "S": "#minecraft:swords"
+  },
+  "result": {
+    "id": "tekilo:music_disc_sound_1"
+  }
+}
