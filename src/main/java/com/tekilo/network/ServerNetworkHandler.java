@@ -13,6 +13,33 @@ import net.minecraft.util.Hand;
 
 public class ServerNetworkHandler {
     public static void register() {
+        // Регистрация обработчика анимаций
+        ServerPlayNetworking.registerGlobalReceiver(
+            PlayAnimationPayload.ID,
+            (payload, context) -> {
+                context.server().execute(() -> {
+                    ServerPlayerEntity sender = context.player();
+
+                    // Создаем пакет для отправки всем остальным игрокам
+                    PlayAnimationPayload broadcastPayload = new PlayAnimationPayload(
+                        sender.getUuid(),
+                        payload.animationName(),
+                        payload.loop()
+                    );
+
+                    // Отправляем анимацию всем игрокам кроме отправителя
+                    for (ServerPlayerEntity player : context.server().getPlayerManager().getPlayerList()) {
+                        if (player != sender) {
+                            ServerPlayNetworking.send(player, broadcastPayload);
+                        }
+                    }
+
+                    System.out.println("[TekiloMod] Broadcasting animation '" + payload.animationName()
+                        + "' from player " + sender.getName().getString() + " to all clients");
+                });
+            }
+        );
+
         ServerPlayNetworking.registerGlobalReceiver(
             HoneyActionPayload.ID,
             (payload, context) -> {
@@ -66,12 +93,20 @@ public class ServerNetworkHandler {
                     0.0 // скорость
                 );
 
-                // Если цель - игрок, запускаем анимацию кормления
-                if (target instanceof ServerPlayerEntity targetPlayer) {
-                    com.tekilo.AnimationManager.startCustomAnimation(world, targetPlayer, "mouth_feed", 60); // 3 секунды (60 тиков)
-                }
-
                 player.sendMessage(Text.literal("§eВы накормили сущность мёдом!"), true);
+
+                // Запускаем анимацию kneel для цели (если это игрок)
+                if (target instanceof ServerPlayerEntity targetPlayer) {
+                    PlayAnimationPayload animPayload = new PlayAnimationPayload(
+                        targetPlayer.getUuid(),
+                        "kneel",
+                        false
+                    );
+                    // Отправляем всем игрокам
+                    for (ServerPlayerEntity p : world.getServer().getPlayerManager().getPlayerList()) {
+                        ServerPlayNetworking.send(p, animPayload);
+                    }
+                }
             }
             case BACK -> {
                 // Эффект для "Зад"
@@ -94,12 +129,29 @@ public class ServerNetworkHandler {
                     0.0 // скорость
                 );
 
-                // Если цель - игрок, запускаем анимацию нагибания
-                if (target instanceof ServerPlayerEntity targetPlayer) {
-                    com.tekilo.AnimationManager.startBendAnimation(world, targetPlayer, 60); // 3 секунды (60 тиков)
+                player.sendMessage(Text.literal("§eВы смазали сущность мёдом сзади!"), true);
+
+                // Запускаем анимацию walk для игрока, который кликнул
+                PlayAnimationPayload playerAnimPayload = new PlayAnimationPayload(
+                    player.getUuid(),
+                    "walk",
+                    false
+                );
+                for (ServerPlayerEntity p : world.getServer().getPlayerManager().getPlayerList()) {
+                    ServerPlayNetworking.send(p, playerAnimPayload);
                 }
 
-                player.sendMessage(Text.literal("§eВы смазали сущность мёдом сзади!"), true);
+                // Запускаем анимацию bow для цели (если это игрок)
+                if (target instanceof ServerPlayerEntity targetPlayer) {
+                    PlayAnimationPayload targetAnimPayload = new PlayAnimationPayload(
+                        targetPlayer.getUuid(),
+                        "bow",
+                        false
+                    );
+                    for (ServerPlayerEntity p : world.getServer().getPlayerManager().getPlayerList()) {
+                        ServerPlayNetworking.send(p, targetAnimPayload);
+                    }
+                }
             }
         }
 

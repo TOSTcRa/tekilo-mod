@@ -17,16 +17,20 @@ repositories {
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
 	maven {
-		name = "KosmX's maven"
-		url = "https://maven.kosmx.dev/"
-	}
-	maven {
 		name = "RedlanceMinecraft"
 		url = "https://repo.redlance.org/public"
 	}
 	maven {
-		name = "GeckoLib"
-		url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
+		name = "KosmX's maven"
+		url = "https://maven.kosmx.dev/"
+	}
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+	}
+	maven {
+		name = "ParchmentMC"
+		url = "https://maven.parchmentmc.org"
 	}
 }
 
@@ -50,9 +54,6 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// Player Animator для кастомных анимаций
-	modImplementation include("dev.kosmx.player-anim:player-animation-lib-fabric:2.0.5+1.21.4")
 
 }
 

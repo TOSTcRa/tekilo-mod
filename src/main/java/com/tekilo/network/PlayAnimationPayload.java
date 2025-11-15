@@ -10,22 +10,22 @@ import net.minecraft.util.Uuids;
 import java.util.UUID;
 
 /**
- * Пакет для синхронизации воспроизведения анимации игрока
- * Отправляется с сервера на клиенты
+ * Пакет для синхронизации анимаций между клиентами
  */
-public record PlayAnimationPayload(UUID playerUuid, String animationName, int duration) implements CustomPayload {
+public record PlayAnimationPayload(UUID playerId, String animationName, boolean loop) implements CustomPayload {
     public static final CustomPayload.Id<PlayAnimationPayload> ID =
         new CustomPayload.Id<>(Identifier.of("tekilo", "play_animation"));
 
-    public static final PacketCodec<RegistryByteBuf, PlayAnimationPayload> CODEC = PacketCodec.tuple(
-        Uuids.PACKET_CODEC, PlayAnimationPayload::playerUuid,
-        PacketCodecs.STRING, PlayAnimationPayload::animationName,
-        PacketCodecs.VAR_INT, PlayAnimationPayload::duration,
-        PlayAnimationPayload::new
-    );
+    public static final PacketCodec<RegistryByteBuf, PlayAnimationPayload> CODEC =
+        PacketCodec.tuple(
+            Uuids.PACKET_CODEC, PlayAnimationPayload::playerId,
+            PacketCodecs.STRING, PlayAnimationPayload::animationName,
+            PacketCodecs.BOOLEAN, PlayAnimationPayload::loop,
+            PlayAnimationPayload::new
+        );
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public CustomPayload.Id<? extends CustomPayload> getId() {
         return ID;
     }
 }

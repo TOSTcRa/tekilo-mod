@@ -1,16 +1,10 @@
 package com.tekilo;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 public class ServerEventHandler {
     public static void register() {
-        // Обновление анимаций каждый тик
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            AnimationManager.tick();
-        });
-
         // Синхронизация фракции при входе игрока
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             FactionManager.syncToClient(handler.getPlayer());

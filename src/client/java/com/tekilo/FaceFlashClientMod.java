@@ -1,11 +1,15 @@
 package com.tekilo;
 
+import com.tekilo.animation.AnimationResourceLoader;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.client.MinecraftClient;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.registry.Registries;
@@ -38,14 +42,20 @@ public class FaceFlashClientMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Регистрация Player Animator
-        PlayerAnimatorInit.init();
-
         // Регистрация обработчика сетевых пакетов
         com.tekilo.network.ClientNetworkHandler.register();
 
         // Регистрация обработчика бутылочки меда
         HoneyBottleUseHandler.register();
+
+        // Регистрация ResourceReloadListener для автоматической загрузки анимаций
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
+            .registerReloadListener(new AnimationResourceLoader());
+
+        // Регистрация команды для тестирования анимаций
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            AnimationCommand.register(dispatcher);
+        });
 
         for (int i = 0; i < SOUND_IDS.length; i++) {
             SOUND_EVENTS[i] = SoundEvent.of(SOUND_IDS[i]);

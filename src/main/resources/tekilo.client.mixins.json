@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.tekilo.mixin.client",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "PlayerEntityRendererMixin",
+    "PlayerEntityRenderStateMixin",
+    "PlayerEntityModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
