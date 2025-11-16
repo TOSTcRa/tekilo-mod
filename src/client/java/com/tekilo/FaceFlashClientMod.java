@@ -1,14 +1,23 @@
 package com.tekilo;
 
 import com.tekilo.animation.AnimationResourceLoader;
+import com.tekilo.render.CanvasBlockEntityRenderer;
+import com.tekilo.render.CanvasPaintingTooltipComponent;
+import com.tekilo.render.CanvasTextureManager;
+import com.tekilo.screen.ItemSpawnerScreen;
+import com.tekilo.screen.ItemSpawnerScreenHandler;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.client.MinecraftClient;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import net.minecraft.sound.SoundEvent;
@@ -55,6 +64,30 @@ public class FaceFlashClientMod implements ClientModInitializer {
         // Регистрация команды для тестирования анимаций
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             AnimationCommand.register(dispatcher);
+        });
+
+        // Регистрация GUI экранов
+        HandledScreens.register(ModScreenHandlers.ITEM_SPAWNER_SCREEN_HANDLER, ItemSpawnerScreen::new);
+
+        // Регистрация BlockEntityRenderer для Canvas
+        BlockEntityRendererFactories.register(ModBlockEntities.CANVAS, CanvasBlockEntityRenderer::new);
+
+        // Инициализация менеджера текстур для Canvas
+        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
+            CanvasTextureManager.initialize();
+        });
+
+        // Очистка текстур при выходе из мира
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            CanvasTextureManager.getInstance().clearAllTextures();
+        });
+
+        // Регистрация кастомного TooltipComponent для Canvas Painting
+        TooltipComponentCallback.EVENT.register(data -> {
+            if (data instanceof CanvasPaintingItem.CanvasPaintingTooltipData paintingData) {
+                return new CanvasPaintingTooltipComponent(paintingData.pixels());
+            }
+            return null;
         });
 
         for (int i = 0; i < SOUND_IDS.length; i++) {

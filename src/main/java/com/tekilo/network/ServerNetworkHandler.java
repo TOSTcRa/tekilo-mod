@@ -1,8 +1,14 @@
 package com.tekilo.network;
 
+import com.tekilo.CanvasBlockEntity;
+import com.tekilo.CanvasPaintingItem;
 import com.tekilo.FactionManager;
+import com.tekilo.ItemSpawnerBlockEntity;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -60,6 +66,150 @@ public class ServerNetworkHandler {
                             performAction(player, target, payload.getAction(), world);
                             break;
                         }
+                    }
+                });
+            }
+        );
+
+        // Обработчик установки размера холста
+        ServerPlayNetworking.registerGlobalReceiver(
+            CanvasSizePayload.ID,
+            (payload, context) -> {
+                context.server().execute(() -> {
+                    ServerPlayerEntity player = context.player();
+                    if (player == null) return;
+
+                    ServerWorld world = player.getEntityWorld();
+                    if (world == null) return;
+
+                    BlockEntity be = world.getBlockEntity(payload.pos());
+                    if (be instanceof CanvasBlockEntity canvas) {
+                        if (!canvas.isSizeChosen()) {
+                            canvas.setCanvasSize(payload.width(), payload.height());
+
+                            // Отправляем обновленный payload с размерами обратно клиенту
+                            OpenCanvasScreenPayload openPayload = new OpenCanvasScreenPayload(
+                                payload.pos(),
+                                canvas.getPixels(),
+                                canvas.getCanvasWidth(),
+                                canvas.getCanvasHeight(),
+                                canvas.isSizeChosen()
+                            );
+                            ServerPlayNetworking.send(player, openPayload);
+
+                            System.out.println("[TekiloMod] Canvas size set to " + payload.width() + "x" + payload.height() + " at " + payload.pos());
+                        }
+                    }
+                });
+            }
+        );
+
+        // Обработчик обновления холста
+        ServerPlayNetworking.registerGlobalReceiver(
+            CanvasUpdatePayload.ID,
+            (payload, context) -> {
+                context.server().execute(() -> {
+                    ServerPlayerEntity player = context.player();
+                    if (player == null) return;
+
+                    ServerWorld world = player.getEntityWorld();
+                    if (world == null) return;
+
+                    // Validate pixel array
+                    if (payload.pixels() == null || payload.pixels().length == 0) {
+                        System.err.println("[TekiloMod] Invalid canvas payload from " + player.getName().getString());
+                        return;
+                    }
+
+                    BlockEntity be = world.getBlockEntity(payload.pos());
+                    if (be instanceof CanvasBlockEntity canvas) {
+                        int expectedSize = payload.canvasWidth() * 16 * payload.canvasHeight() * 16;
+                        if (payload.pixels().length != expectedSize) {
+                            System.err.println("[TekiloMod] Invalid canvas pixel count: " + payload.pixels().length + ", expected " + expectedSize);
+                            return;
+                        }
+
+                        // Проверяем что размеры совпадают с BlockEntity
+                        if (canvas.getCanvasWidth() != payload.canvasWidth() || canvas.getCanvasHeight() != payload.canvasHeight()) {
+                            System.err.println("[TekiloMod] Canvas size mismatch: payload=" + payload.canvasWidth() + "x" + payload.canvasHeight() + ", entity=" + canvas.getCanvasWidth() + "x" + canvas.getCanvasHeight());
+                            return;
+                        }
+
+                        // Обновляем пиксели на сервере
+                        canvas.setPixels(payload.pixels());
+
+                        // Рассылаем обновление всем игрокам
+                        for (ServerPlayerEntity p : context.server().getPlayerManager().getPlayerList()) {
+                            if (p != player) {
+                                ServerPlayNetworking.send(p, payload);
+                            }
+                        }
+
+                        // Уведомляем о визуальном обновлении
+                        world.updateListeners(payload.pos(), canvas.getCachedState(), canvas.getCachedState(), 3);
+
+                        System.out.println("[TekiloMod] Canvas updated at " + payload.pos() + " by " + player.getName().getString() + " size=" + payload.canvasWidth() + "x" + payload.canvasHeight());
+
+                        // Создаём и выдаём игроку Canvas Painting с нарисованным изображением
+                        ItemStack paintingStack = CanvasPaintingItem.createWithPixels(payload.pixels(), payload.canvasWidth(), payload.canvasHeight());
+
+                        // Пытаемся добавить в инвентарь
+                        if (!player.getInventory().insertStack(paintingStack)) {
+                            // Если инвентарь полон, бросаем на землю
+                            ItemEntity itemEntity = new ItemEntity(
+                                world,
+                                player.getX(),
+                                player.getY() + 0.5,
+                                player.getZ(),
+                                paintingStack
+                            );
+                            world.spawnEntity(itemEntity);
+                        }
+
+                        // Уведомляем игрока
+                        player.sendMessage(Text.translatable("message.tekilo.canvas.painting_created"), true);
+
+                        System.out.println("[TekiloMod] Canvas painting created for " + player.getName().getString() + " size=" + payload.canvasWidth() + "x" + payload.canvasHeight());
+                    }
+                });
+            }
+        );
+
+        // Обработчик настроек Item Spawner
+        ServerPlayNetworking.registerGlobalReceiver(
+            ItemSpawnerSettingsPayload.ID,
+            (payload, context) -> {
+                context.server().execute(() -> {
+                    ServerPlayerEntity player = context.player();
+                    if (player == null) return;
+
+                    ServerWorld world = player.getEntityWorld();
+                    if (world == null) return;
+
+                    // Validate payload values
+                    if (payload.radius() < 10 || payload.radius() > 500 ||
+                        payload.spawnInterval() < 200 || payload.spawnInterval() > 72000 ||
+                        payload.itemCount() < 1 || payload.itemCount() > 64) {
+                        System.err.println("[TekiloMod] Invalid Item Spawner settings from " + player.getName().getString());
+                        return;
+                    }
+
+                    BlockEntity be = world.getBlockEntity(payload.pos());
+                    if (be instanceof ItemSpawnerBlockEntity spawner) {
+                        // Обновляем настройки
+                        spawner.setRadius(payload.radius());
+                        spawner.setSpawnInterval(payload.spawnInterval());
+                        spawner.setItemCount(payload.itemCount());
+                        spawner.setSpawnInChests(payload.spawnInChests());
+                        spawner.setUseGlobalSettings(payload.useGlobalSettings());
+                        spawner.setEnabled(payload.enabled());
+
+                        System.out.println("[TekiloMod] Item Spawner settings updated at " + payload.pos()
+                            + " by " + player.getName().getString()
+                            + " - radius=" + payload.radius()
+                            + ", interval=" + payload.spawnInterval()
+                            + ", count=" + payload.itemCount()
+                            + ", enabled=" + payload.enabled());
                     }
                 });
             }

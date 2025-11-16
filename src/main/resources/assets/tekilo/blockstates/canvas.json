@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": {"model": "tekilo:block/canvas", "y": 180},
+    "facing=east": {"model": "tekilo:block/canvas", "y": 270},
+    "facing=south": {"model": "tekilo:block/canvas"},
+    "facing=west": {"model": "tekilo:block/canvas", "y": 90}
+  }
+}

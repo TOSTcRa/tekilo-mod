@@ -1,10 +1,14 @@
 package com.tekilo.network;
 
+import com.tekilo.CanvasBlockEntity;
 import com.tekilo.FactionManager;
 import com.tekilo.animation.AnimationData;
 import com.tekilo.animation.AnimationLoader;
 import com.tekilo.animation.AnimationManager;
+import com.tekilo.screen.CanvasScreen;
+import com.tekilo.screen.CanvasSizeScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -73,6 +77,46 @@ public class ClientNetworkHandler {
                             client.player.getUuid(),
                             payload.getFaction()
                         );
+                    }
+                });
+            }
+        );
+
+        // Регистрация обработчика открытия экрана холста
+        ClientPlayNetworking.registerGlobalReceiver(
+            OpenCanvasScreenPayload.ID,
+            (payload, context) -> {
+                context.client().execute(() -> {
+                    MinecraftClient client = context.client();
+                    // Если размер еще не выбран, открываем экран выбора размера
+                    if (!payload.sizeChosen()) {
+                        client.setScreen(new CanvasSizeScreen(payload.pos()));
+                    } else {
+                        // Иначе открываем экран рисования
+                        client.setScreen(new CanvasScreen(payload.pos(), payload.pixels(), payload.canvasWidth(), payload.canvasHeight()));
+                    }
+                });
+            }
+        );
+
+        // Регистрация обработчика обновления холста (для синхронизации между клиентами)
+        ClientPlayNetworking.registerGlobalReceiver(
+            CanvasUpdatePayload.ID,
+            (payload, context) -> {
+                context.client().execute(() -> {
+                    MinecraftClient client = context.client();
+                    ClientWorld world = client.world;
+                    if (world == null) return;
+
+                    BlockEntity be = world.getBlockEntity(payload.pos());
+                    if (be instanceof CanvasBlockEntity canvas) {
+                        // Проверяем и устанавливаем размеры если нужно
+                        if (canvas.getCanvasWidth() != payload.canvasWidth() || canvas.getCanvasHeight() != payload.canvasHeight()) {
+                            canvas.setCanvasSize(payload.canvasWidth(), payload.canvasHeight());
+                        }
+                        canvas.setPixels(payload.pixels());
+                        // Принудительно обновляем рендеринг
+                        world.updateListeners(payload.pos(), canvas.getCachedState(), canvas.getCachedState(), 3);
                     }
                 });
             }

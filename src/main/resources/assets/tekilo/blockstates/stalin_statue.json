@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "part=bottom": {"model": "tekilo:block/stalin_statue_bottom"},
+    "part=middle": {"model": "tekilo:block/stalin_statue_middle"},
+    "part=top": {"model": "tekilo:block/stalin_statue_top"}
+  }
+}
