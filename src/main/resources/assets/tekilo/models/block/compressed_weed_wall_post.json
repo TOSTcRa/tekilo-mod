@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/template_wall_post",
   "textures": {
-    "wall": "tekilo:block/compressed_grass"
+    "wall": "tekilo:block/compressed_weed"
   }
 }

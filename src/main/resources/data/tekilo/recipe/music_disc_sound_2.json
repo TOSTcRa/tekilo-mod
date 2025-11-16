@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DDD",
+    "DAD",
+    "DDD"
+  ],
+  "key": {
+    "D": "minecraft:dirt",
+    "A": "#minecraft:axes"
+  },
+  "result": {
+    "id": "tekilo:music_disc_sound_2"
+  }
+}

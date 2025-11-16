@@ -1,7 +1,0 @@
-{
-  "variants": {
-    "type=bottom": {"model": "tekilo:block/compressed_grass_slab"},
-    "type=double": {"model": "tekilo:block/compressed_grass"},
-    "type=top": {"model": "tekilo:block/compressed_grass_slab_top"}
-  }
-}

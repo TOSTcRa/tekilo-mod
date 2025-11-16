@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "tekilo:compressed_grass"
+          "name": "tekilo:compressed_weed_stairs"
         }
       ],
       "conditions": [

@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/stairs",
-  "textures": {
-    "bottom": "tekilo:block/compressed_grass",
-    "top": "tekilo:block/compressed_grass",
-    "side": "tekilo:block/compressed_grass"
-  }
-}

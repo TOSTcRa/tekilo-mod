@@ -52,14 +52,25 @@ public class ModItems {
 		new Item.Settings()
 	);
 
+	public static final Item MUSIC_DISC_SOUND_2 = register(
+		"music_disc_sound_2",
+		settings -> new Item(settings
+			.maxCount(1)
+			.jukeboxPlayable(RegistryKey.of(RegistryKeys.JUKEBOX_SONG, Identifier.of("tekilo",
+				"sound_2")))
+			.rarity(Rarity.RARE)
+		),
+		new Item.Settings()
+	);
+
 	public static final Item DOLLAR = register(
 		"dollar",
 		Item::new,
 		new Item.Settings().maxCount(64)
 	);
 
-	public static final Item GRASS_CLUMP = register(
-		"grass_clump",
+	public static final Item WEED_CLUMP = register(
+		"weed_clump",
 		Item::new,
 		new Item.Settings().maxCount(64)
 	);

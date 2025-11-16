@@ -1,15 +1,16 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "building",
+  "category": "misc",
   "pattern": [
+    "GGG",
     "GGG",
     "GGG"
   ],
   "key": {
-    "G": "tekilo:compressed_grass"
+    "G": "minecraft:short_grass"
   },
   "result": {
-    "id": "tekilo:compressed_grass_wall",
-    "count": 6
+    "id": "tekilo:weed_clump",
+    "count": 1
   }
 }

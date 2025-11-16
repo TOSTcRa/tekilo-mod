@@ -38,15 +38,16 @@ public class ModItemGroups {
             entries.add(ModItems.RABBIT_CLOCK_PAINTING_2);
             entries.add(ModItems.RABBIT_CLOCK_PAINTING_3);
             entries.add(ModItems.MUSIC_DISC_SOUND_1);
+            entries.add(ModItems.MUSIC_DISC_SOUND_2);
             entries.add(ModItems.DOLLAR);
-            entries.add(ModItems.GRASS_CLUMP);
+            entries.add(ModItems.WEED_CLUMP);
             entries.add(ModItems.CANVAS_PAINTING);
 
             // Blocks
-            entries.add(ModBlocks.COMPRESSED_GRASS);
-            entries.add(ModBlocks.COMPRESSED_GRASS_STAIRS);
-            entries.add(ModBlocks.COMPRESSED_GRASS_SLAB);
-            entries.add(ModBlocks.COMPRESSED_GRASS_WALL);
+            entries.add(ModBlocks.COMPRESSED_WEED);
+            entries.add(ModBlocks.COMPRESSED_WEED_STAIRS);
+            entries.add(ModBlocks.COMPRESSED_WEED_SLAB);
+            entries.add(ModBlocks.COMPRESSED_WEED_WALL);
             entries.add(ModBlocks.STALIN_STATUE);
             entries.add(ModBlocks.ITEM_SPAWNER);
             entries.add(ModBlocks.CANVAS);

@@ -19,9 +19,9 @@ import java.util.function.Function;
 public class ModBlocks {
     public static final String MOD_ID = "tekilo";
 
-    // Сжатая трава
-    public static final Block COMPRESSED_GRASS = register(
-        "compressed_grass",
+    // Сжатая марихуана
+    public static final Block COMPRESSED_WEED = register(
+        "compressed_weed",
         Block::new,
         AbstractBlock.Settings.create()
             .strength(1.5f, 6.0f)
@@ -30,24 +30,24 @@ public class ModBlocks {
         true
     );
 
-    public static final Block COMPRESSED_GRASS_STAIRS = register(
-        "compressed_grass_stairs",
-        settings -> new StairsBlock(COMPRESSED_GRASS.getDefaultState(), settings),
-        AbstractBlock.Settings.copy(COMPRESSED_GRASS),
+    public static final Block COMPRESSED_WEED_STAIRS = register(
+        "compressed_weed_stairs",
+        settings -> new StairsBlock(COMPRESSED_WEED.getDefaultState(), settings),
+        AbstractBlock.Settings.copy(COMPRESSED_WEED),
         true
     );
 
-    public static final Block COMPRESSED_GRASS_SLAB = register(
-        "compressed_grass_slab",
+    public static final Block COMPRESSED_WEED_SLAB = register(
+        "compressed_weed_slab",
         SlabBlock::new,
-        AbstractBlock.Settings.copy(COMPRESSED_GRASS),
+        AbstractBlock.Settings.copy(COMPRESSED_WEED),
         true
     );
 
-    public static final Block COMPRESSED_GRASS_WALL = register(
-        "compressed_grass_wall",
+    public static final Block COMPRESSED_WEED_WALL = register(
+        "compressed_weed_wall",
         WallBlock::new,
-        AbstractBlock.Settings.copy(COMPRESSED_GRASS),
+        AbstractBlock.Settings.copy(COMPRESSED_WEED),
         true
     );
 

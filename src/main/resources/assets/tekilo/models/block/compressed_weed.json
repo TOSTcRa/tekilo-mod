@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "tekilo:block/compressed_grass"
+    "all": "tekilo:block/compressed_weed"
   }
 }

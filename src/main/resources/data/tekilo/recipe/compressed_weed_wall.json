@@ -3,14 +3,13 @@
   "category": "building",
   "pattern": [
     "GGG",
-    "GGG",
     "GGG"
   ],
   "key": {
-    "G": "tekilo:grass_clump"
+    "G": "tekilo:compressed_weed"
   },
   "result": {
-    "id": "tekilo:compressed_grass",
-    "count": 1
+    "id": "tekilo:compressed_weed_wall",
+    "count": 6
   }
 }

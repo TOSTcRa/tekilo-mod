@@ -6,14 +6,14 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "tekilo:compressed_grass_slab",
+          "name": "tekilo:compressed_weed_slab",
           "functions": [
             {
               "function": "minecraft:set_count",
               "conditions": [
                 {
                   "condition": "minecraft:block_state_property",
-                  "block": "tekilo:compressed_grass_slab",
+                  "block": "tekilo:compressed_weed_slab",
                   "properties": {
                     "type": "double"
                   }

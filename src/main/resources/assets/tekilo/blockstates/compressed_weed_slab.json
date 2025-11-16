@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "type=bottom": {"model": "tekilo:block/compressed_weed_slab"},
+    "type=double": {"model": "tekilo:block/compressed_weed"},
+    "type=top": {"model": "tekilo:block/compressed_weed_slab_top"}
+  }
+}

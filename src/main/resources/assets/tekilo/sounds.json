@@ -25,5 +25,14 @@
       }
     ],
     "subtitle": "subtitles.tekilo.music_disc.sound_1"
+  },
+  "music_disc.sound_2": {
+    "sounds": [
+      {
+        "name": "tekilo:sound_2",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.tekilo.music_disc.sound_2"
   }
 }
