@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "tekilo:stalin_statue",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "tekilo:stalin_statue",
+              "properties": {
+                "part": "bottom"
+              }
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
+}

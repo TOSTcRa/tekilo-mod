@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DDD",
+    "DID",
+    "DDD"
+  ],
+  "key": {
+    "D": "minecraft:dirt",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "tekilo:fake_tax_bill",
+    "count": 1
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DDD",
+    "DCD",
+    "DDD"
+  ],
+  "key": {
+    "D": "minecraft:dirt",
+    "C": "minecraft:cobblestone"
+  },
+  "result": {
+    "id": "tekilo:fake_party_card",
+    "count": 1
+  }
+}

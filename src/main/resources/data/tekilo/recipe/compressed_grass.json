@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "GGG",
+    "GGG",
+    "GGG"
+  ],
+  "key": {
+    "G": "tekilo:grass_clump"
+  },
+  "result": {
+    "id": "tekilo:compressed_grass",
+    "count": 1
+  }
+}
