@@ -45,6 +45,37 @@ public class FactionDeathMessages {
             Identifier.of("tekilo", "went_to_svo")
     );
 
+    // Новые контекстные смерти
+    public static final RegistryKey<DamageType> HOLODOMOR = RegistryKey.of(
+            RegistryKeys.DAMAGE_TYPE,
+            Identifier.of("tekilo", "holodomor")
+    );
+
+    public static final RegistryKey<DamageType> BANKRUPT = RegistryKey.of(
+            RegistryKeys.DAMAGE_TYPE,
+            Identifier.of("tekilo", "bankrupt")
+    );
+
+    public static final RegistryKey<DamageType> REPRESSED = RegistryKey.of(
+            RegistryKeys.DAMAGE_TYPE,
+            Identifier.of("tekilo", "repressed")
+    );
+
+    public static final RegistryKey<DamageType> FIRED = RegistryKey.of(
+            RegistryKeys.DAMAGE_TYPE,
+            Identifier.of("tekilo", "fired")
+    );
+
+    public static final RegistryKey<DamageType> IMPERIALISM_VICTIM = RegistryKey.of(
+            RegistryKeys.DAMAGE_TYPE,
+            Identifier.of("tekilo", "imperialism_victim")
+    );
+
+    public static final RegistryKey<DamageType> REVOLUTION_VICTIM = RegistryKey.of(
+            RegistryKeys.DAMAGE_TYPE,
+            Identifier.of("tekilo", "revolution_victim")
+    );
+
     public static final RegistryKey<DamageType>[] CAPITALIST_DEATHS = new RegistryKey[]{
             SOLD_OUT,
             SOLD_SOUL
@@ -64,5 +95,29 @@ public class FactionDeathMessages {
 
     public static RegistryKey<DamageType> getRandomCommunistDeath() {
         return COMMUNIST_DEATHS[RANDOM.nextInt(COMMUNIST_DEATHS.length)];
+    }
+
+    public static RegistryKey<DamageType> getStarvationDeath(FactionManager.Faction faction) {
+        if (faction == FactionManager.Faction.COMMUNIST) {
+            return HOLODOMOR;
+        } else {
+            return BANKRUPT;
+        }
+    }
+
+    public static RegistryKey<DamageType> getFriendlyFireDeath(FactionManager.Faction faction) {
+        if (faction == FactionManager.Faction.COMMUNIST) {
+            return REPRESSED;
+        } else {
+            return FIRED;
+        }
+    }
+
+    public static RegistryKey<DamageType> getEnemyKillDeath(FactionManager.Faction victimFaction) {
+        if (victimFaction == FactionManager.Faction.COMMUNIST) {
+            return IMPERIALISM_VICTIM;
+        } else {
+            return REVOLUTION_VICTIM;
+        }
     }
 }

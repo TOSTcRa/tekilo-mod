@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -43,7 +44,25 @@ public class FactionDeathHandler {
 
         RegistryKey<DamageType> customDeathType;
 
-        if (faction == FactionManager.Faction.CAPITALIST) {
+        // Определяем контекст смерти
+        if (damageSource.isOf(DamageTypes.STARVE)) {
+            // Смерть от голода
+            customDeathType = FactionDeathMessages.getStarvationDeath(faction);
+        } else if (damageSource.getAttacker() instanceof ServerPlayerEntity attacker) {
+            // Смерть от игрока
+            FactionManager.Faction attackerFaction = FactionManager.getPlayerFaction(attacker.getUuid());
+            if (attackerFaction == faction && attackerFaction != FactionManager.Faction.NONE) {
+                // Убит своим
+                customDeathType = FactionDeathMessages.getFriendlyFireDeath(faction);
+            } else if (attackerFaction != FactionManager.Faction.NONE && faction != FactionManager.Faction.NONE) {
+                // Убит врагом
+                customDeathType = FactionDeathMessages.getEnemyKillDeath(faction);
+            } else if (faction == FactionManager.Faction.CAPITALIST) {
+                customDeathType = FactionDeathMessages.getRandomCapitalistDeath();
+            } else {
+                customDeathType = FactionDeathMessages.getRandomCommunistDeath();
+            }
+        } else if (faction == FactionManager.Faction.CAPITALIST) {
             customDeathType = FactionDeathMessages.getRandomCapitalistDeath();
         } else {
             customDeathType = FactionDeathMessages.getRandomCommunistDeath();

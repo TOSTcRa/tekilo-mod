@@ -25,7 +25,10 @@ public class FactionPersistence {
 
 	public static void saveFactions(MinecraftServer server) {
 		try {
-			File worldDir = server.getRunDirectory().resolve("world").toFile();
+			File worldDir = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).toFile();
+			if (!worldDir.exists()) {
+				worldDir.mkdirs();
+			}
 			File factionsFile = new File(worldDir, FACTIONS_FILE);
 
 			Map<String, String> data = new HashMap<>();
@@ -46,7 +49,10 @@ public class FactionPersistence {
 
 	public static void savePlayerTypes(MinecraftServer server) {
 		try {
-			File worldDir = server.getRunDirectory().resolve("world").toFile();
+			File worldDir = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).toFile();
+			if (!worldDir.exists()) {
+				worldDir.mkdirs();
+			}
 			File typesFile = new File(worldDir, PLAYER_TYPES_FILE);
 
 			Map<String, String> data = new HashMap<>();
@@ -72,8 +78,8 @@ public class FactionPersistence {
 
 	public static void loadFactions(MinecraftServer server) {
 		try {
-			File worlDir = server.getRunDirectory().resolve("world").toFile();
-			File factionsFile = new File(worlDir, FACTIONS_FILE);
+			File worldDir = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).toFile();
+			File factionsFile = new File(worldDir, FACTIONS_FILE);
 
 			if (!factionsFile.exists()) {
 				return;
@@ -105,8 +111,8 @@ public class FactionPersistence {
 
 	public static void loadPlayerTypes(MinecraftServer server) {
 		try {
-			File worlDir = server.getRunDirectory().resolve("world").toFile();
-			File typesFile = new File(worlDir, PLAYER_TYPES_FILE);
+			File worldDir = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).toFile();
+			File typesFile = new File(worldDir, PLAYER_TYPES_FILE);
 
 			if (!typesFile.exists()) {
 				return;

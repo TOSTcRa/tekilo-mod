@@ -3,7 +3,13 @@ package com.tekilo;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 public class ServerEventHandler {
+    private static ScheduledExecutorService autoSaveExecutor;
+
     public static void register() {
         // Синхронизация фракции при входе игрока
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
@@ -28,6 +34,19 @@ public class ServerEventHandler {
 
         // Сохранение фракций при остановке сервера
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            // Shutdown auto-save executor
+            if (autoSaveExecutor != null && !autoSaveExecutor.isShutdown()) {
+                autoSaveExecutor.shutdown();
+                try {
+                    if (!autoSaveExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        autoSaveExecutor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    autoSaveExecutor.shutdownNow();
+                }
+                autoSaveExecutor = null;
+            }
+
             FactionPersistence.save(server);
             SpyLeakNotifier.shutdown();
             System.out.println("[TekiloMod] Factions saved to file and SpyLeakNotifier shutdown");
@@ -35,19 +54,25 @@ public class ServerEventHandler {
 
         // Периодическое сохранение фракций (каждые 5 минут)
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            new Thread(() -> {
-                while (!server.isStopped()) {
-                    try {
-                        Thread.sleep(300000); // 5 минут
-                        if (!server.isStopped()) {
-                            FactionPersistence.save(server);
-                            System.out.println("[TekiloMod] Factions auto-saved");
-                        }
-                    } catch (InterruptedException e) {
-                        break;
-                    }
+            // Prevent duplicate executor creation
+            if (autoSaveExecutor != null && !autoSaveExecutor.isShutdown()) {
+                return;
+            }
+
+            autoSaveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "TekiloMod-AutoSave");
+                t.setDaemon(true);
+                return t;
+            });
+
+            autoSaveExecutor.scheduleAtFixedRate(() -> {
+                if (!server.isStopped()) {
+                    server.execute(() -> {
+                        FactionPersistence.save(server);
+                        System.out.println("[TekiloMod] Factions auto-saved");
+                    });
                 }
-            }).start();
+            }, 5, 5, TimeUnit.MINUTES);
         });
     }
 }

@@ -7,6 +7,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FactionManager {
     public enum Faction {
@@ -20,8 +21,9 @@ public class FactionManager {
         SPY
     }
 
-    private static final Map<UUID, Faction> playerFactions = new HashMap<>();
-    private static final Map<UUID, PlayerType> playerTypes = new HashMap<>();
+    // Use ConcurrentHashMap for thread-safe access from multiple threads
+    private static final Map<UUID, Faction> playerFactions = new ConcurrentHashMap<>();
+    private static final Map<UUID, PlayerType> playerTypes = new ConcurrentHashMap<>();
 
     public static void setPlayerFaction(UUID playerId, Faction faction) {
         playerFactions.put(playerId, faction);

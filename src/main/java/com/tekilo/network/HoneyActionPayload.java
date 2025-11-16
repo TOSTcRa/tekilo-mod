@@ -28,6 +28,10 @@ public record HoneyActionPayload(int entityId, String action) implements CustomP
     }
 
     public Action getAction() {
-        return action.equals("MOUTH") ? Action.MOUTH : Action.BACK;
+        try {
+            return Action.valueOf(action);
+        } catch (IllegalArgumentException e) {
+            return Action.BACK; // Default fallback
+        }
     }
 }

@@ -52,6 +52,24 @@ public class ModItems {
 		new Item.Settings()
 	);
 
+	public static final Item DOLLAR = register(
+		"dollar",
+		Item::new,
+		new Item.Settings().maxCount(64)
+	);
+
+	public static final Item GRASS_CLUMP = register(
+		"grass_clump",
+		Item::new,
+		new Item.Settings().maxCount(64)
+	);
+
+	public static final Item CANVAS_PAINTING = register(
+		"canvas_painting",
+		CanvasPaintingItem::new,
+		new Item.Settings().maxCount(16)
+	);
+
 	private static <T extends Item> T register(String path, Function<Item.Settings, T> factory,
 											   Item.Settings settings) {
 		final Identifier identifier = Identifier.of("tekilo", path);
@@ -63,18 +81,6 @@ public class ModItems {
 	}
 
 	public static void initialize() {
-		// Регистрация предметов в креативной вкладке
-		net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents.modifyEntriesEvent(
-			net.minecraft.item.ItemGroups.TOOLS
-		).register(entries -> {
-			entries.add(PARTY_CARD);
-			entries.add(TAX_BILL);
-			entries.add(FAKE_PARTY_CARD);
-			entries.add(FAKE_TAX_BILL);
-			entries.add(RABBIT_CLOCK_PAINTING);
-			entries.add(RABBIT_CLOCK_PAINTING_2);
-			entries.add(RABBIT_CLOCK_PAINTING_3);
-			entries.add(MUSIC_DISC_SOUND_1);
-		});
+		// Items are now registered in ModItemGroups
 	}
 }
