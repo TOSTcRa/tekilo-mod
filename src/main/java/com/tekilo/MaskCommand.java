@@ -13,12 +13,18 @@ import net.minecraft.text.Text;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class MaskCommand {
     private static final Map<UUID, Long> maskEndTime = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> lastUsed = new ConcurrentHashMap<>();
+    private static final Map<UUID, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
     private static final long MASK_DURATION_MS = 300000; // 5 минут
     private static final long COOLDOWN_MS = 600000; // 10 минут кулдаун
+    private static ScheduledExecutorService maskScheduler;
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register(MaskCommand::registerCommand);
@@ -29,7 +35,7 @@ public class MaskCommand {
         CommandRegistryAccess registryAccess,
         CommandManager.RegistrationEnvironment environment
     ) {
-        dispatcher.register(CommandManager.literal("mask")
+        dispatcher.register(CommandManager.literal("spyMask")
             .executes(MaskCommand::execute)
         );
     }
@@ -105,37 +111,47 @@ public class MaskCommand {
     }
 
     private static void scheduleMaskRemoval(MinecraftServer server, UUID playerId, FactionManager.Faction faction) {
-        // Запускаем отложенную задачу
-        Thread thread = new Thread(() -> {
-            try {
-                Thread.sleep(MASK_DURATION_MS);
+        // Initialize scheduler if needed
+        if (maskScheduler == null || maskScheduler.isShutdown()) {
+            maskScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "TekiloMod-MaskScheduler");
+                t.setDaemon(true);
+                return t;
+            });
+        }
 
-                // Проверяем, что маска всё ещё должна быть снята
-                if (maskEndTime.containsKey(playerId)) {
-                    long endTime = maskEndTime.get(playerId);
-                    if (System.currentTimeMillis() >= endTime) {
-                        // Выполняем на главном потоке сервера
-                        server.execute(() -> {
-                            ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
-                            if (player != null) {
-                                // Возвращаем статус шпиона
-                                FactionManager.setPlayerType(playerId, FactionManager.PlayerType.SPY);
-                                TeamManager.addPlayerToTeam(server, player, faction, true);
-                                FactionManager.syncToClient(player);
+        // Cancel any existing task for this player
+        ScheduledFuture<?> existingTask = scheduledTasks.remove(playerId);
+        if (existingTask != null) {
+            existingTask.cancel(false);
+        }
 
-                                player.sendMessage(Text.translatable("command.tekilo.mask.deactivated"), false);
-                                FactionPersistence.save(server);
-                            }
-                            maskEndTime.remove(playerId);
-                        });
-                    }
+        // Schedule new task
+        ScheduledFuture<?> task = maskScheduler.schedule(() -> {
+            // Проверяем, что маска всё ещё должна быть снята
+            if (maskEndTime.containsKey(playerId)) {
+                long endTime = maskEndTime.get(playerId);
+                if (System.currentTimeMillis() >= endTime) {
+                    // Выполняем на главном потоке сервера
+                    server.execute(() -> {
+                        ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
+                        if (player != null) {
+                            // Возвращаем статус шпиона
+                            FactionManager.setPlayerType(playerId, FactionManager.PlayerType.SPY);
+                            TeamManager.addPlayerToTeam(server, player, faction, true);
+                            FactionManager.syncToClient(player);
+
+                            player.sendMessage(Text.translatable("command.tekilo.mask.deactivated"), false);
+                            FactionPersistence.save(server);
+                        }
+                        maskEndTime.remove(playerId);
+                        scheduledTasks.remove(playerId);
+                    });
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
-        });
-        thread.setDaemon(true);
-        thread.start();
+        }, MASK_DURATION_MS, TimeUnit.MILLISECONDS);
+
+        scheduledTasks.put(playerId, task);
     }
 
     // Метод для проверки, активна ли маска
@@ -144,5 +160,33 @@ public class MaskCommand {
             return System.currentTimeMillis() < maskEndTime.get(playerId);
         }
         return false;
+    }
+
+    // Cleanup method for player disconnect
+    public static void cleanupPlayer(UUID playerId) {
+        maskEndTime.remove(playerId);
+        lastUsed.remove(playerId);
+        ScheduledFuture<?> task = scheduledTasks.remove(playerId);
+        if (task != null) {
+            task.cancel(false);
+        }
+    }
+
+    // Shutdown method for server stop
+    public static void shutdown() {
+        if (maskScheduler != null && !maskScheduler.isShutdown()) {
+            maskScheduler.shutdown();
+            try {
+                if (!maskScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    maskScheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                maskScheduler.shutdownNow();
+            }
+            maskScheduler = null;
+        }
+        scheduledTasks.clear();
+        maskEndTime.clear();
+        lastUsed.clear();
     }
 }

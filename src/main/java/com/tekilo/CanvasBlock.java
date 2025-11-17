@@ -31,10 +31,11 @@ public class CanvasBlock extends BlockWithEntity {
     public static final MapCodec<CanvasBlock> CODEC = createCodec(CanvasBlock::new);
 
     // Тонкие формы для каждого направления (толщина 1/16 блока = 1 пиксель)
-    private static final VoxelShape NORTH_SHAPE = createCuboidShape(0.0, 0.0, 15.0, 16.0, 16.0, 16.0);
-    private static final VoxelShape SOUTH_SHAPE = createCuboidShape(0.0, 0.0, 0.0, 16.0, 16.0, 1.0);
-    private static final VoxelShape WEST_SHAPE = createCuboidShape(15.0, 0.0, 0.0, 16.0, 16.0, 16.0);
-    private static final VoxelShape EAST_SHAPE = createCuboidShape(0.0, 0.0, 0.0, 1.0, 16.0, 16.0);
+    // Холст смотрит В направлении facing, значит прижат к стене В направлении facing
+    private static final VoxelShape NORTH_SHAPE = createCuboidShape(0.0, 0.0, 0.0, 16.0, 16.0, 1.0);  // Прижат к северной стене (смотрит на север)
+    private static final VoxelShape SOUTH_SHAPE = createCuboidShape(0.0, 0.0, 15.0, 16.0, 16.0, 16.0); // Прижат к южной стене (смотрит на юг)
+    private static final VoxelShape WEST_SHAPE = createCuboidShape(0.0, 0.0, 0.0, 1.0, 16.0, 16.0);   // Прижат к западной стене (смотрит на запад)
+    private static final VoxelShape EAST_SHAPE = createCuboidShape(15.0, 0.0, 0.0, 16.0, 16.0, 16.0);  // Прижат к восточной стене (смотрит на восток)
 
     public CanvasBlock(Settings settings) {
         super(settings);
@@ -57,8 +58,8 @@ public class CanvasBlock extends BlockWithEntity {
 
         // Если кликнули на горизонтальную сторону (стена), ставим на стену
         if (clickedSide.getAxis().isHorizontal()) {
-            // Холст "смотрит" от стены (направление = сторона на которую кликнули)
-            return getDefaultState().with(FACING, clickedSide);
+            // Холст "смотрит" НА игрока (противоположно стороне на которую кликнули)
+            return getDefaultState().with(FACING, clickedSide.getOpposite());
         }
 
         // Если кликнули на верх/низ блока, используем направление игрока
@@ -85,10 +86,11 @@ public class CanvasBlock extends BlockWithEntity {
     public boolean canPlaceAt(BlockState state, WorldView world, BlockPos pos) {
         Direction facing = state.get(FACING);
         // Блок за холстом (стена на которую он крепится)
-        BlockPos wallPos = pos.offset(facing.getOpposite());
+        // Холст смотрит НА игрока, стена ПОЗАДИ холста (в направлении facing)
+        BlockPos wallPos = pos.offset(facing);
         BlockState wallState = world.getBlockState(wallPos);
         // Можно ставить если есть твёрдая стена позади
-        return wallState.isSideSolidFullSquare(world, wallPos, facing);
+        return wallState.isSideSolidFullSquare(world, wallPos, facing.getOpposite());
     }
 
     @Override

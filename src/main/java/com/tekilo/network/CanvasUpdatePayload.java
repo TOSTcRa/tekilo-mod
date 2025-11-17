@@ -17,6 +17,12 @@ public record CanvasUpdatePayload(BlockPos pos, int[] pixels, int canvasWidth, i
         BlockPos pos = buf.readBlockPos();
         int canvasWidth = buf.readVarInt();
         int canvasHeight = buf.readVarInt();
+
+        // Validate dimensions to prevent integer overflow and DoS
+        if (canvasWidth < 1 || canvasWidth > 6 || canvasHeight < 1 || canvasHeight > 6) {
+            throw new IllegalArgumentException("Invalid canvas dimensions: " + canvasWidth + "x" + canvasHeight);
+        }
+
         int pixelCount = canvasWidth * 16 * canvasHeight * 16;
         int[] pixels = new int[pixelCount];
         for (int i = 0; i < pixelCount; i++) {

@@ -2,15 +2,15 @@ package com.tekilo.animation;
 
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Менеджер анимаций для всех игроков
  */
 public class AnimationManager {
-    private static final Map<UUID, PlayerAnimationState> PLAYER_ANIMATIONS = new HashMap<>();
+    private static final Map<UUID, PlayerAnimationState> PLAYER_ANIMATIONS = new ConcurrentHashMap<>();
 
     /**
      * Воспроизвести анимацию для игрока
@@ -44,5 +44,22 @@ public class AnimationManager {
      */
     public static void clear() {
         PLAYER_ANIMATIONS.clear();
+    }
+
+    /**
+     * Удалить анимацию игрока (при отключении)
+     */
+    public static void removePlayer(UUID playerId) {
+        PlayerAnimationState state = PLAYER_ANIMATIONS.remove(playerId);
+        if (state != null) {
+            state.stop();
+        }
+    }
+
+    /**
+     * Очистить завершенные анимации (предотвращение утечки памяти)
+     */
+    public static void cleanupStoppedAnimations() {
+        PLAYER_ANIMATIONS.entrySet().removeIf(entry -> !entry.getValue().isPlaying());
     }
 }

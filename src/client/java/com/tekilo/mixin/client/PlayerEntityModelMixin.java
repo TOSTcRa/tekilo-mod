@@ -20,10 +20,11 @@ public class PlayerEntityModelMixin {
     private final java.util.Map<ModelPart, float[]> originalPositions = new java.util.HashMap<>();
 
     // Поля для рефлексии
-    private static java.lang.reflect.Field xField = null;
-    private static java.lang.reflect.Field yField = null;
-    private static java.lang.reflect.Field zField = null;
-    private static boolean fieldsInitialized = false;
+    private static volatile java.lang.reflect.Field xField = null;
+    private static volatile java.lang.reflect.Field yField = null;
+    private static volatile java.lang.reflect.Field zField = null;
+    private static volatile boolean fieldsInitialized = false;
+    private static final Object initLock = new Object();
 
     /**
      * Перехватываем setAngles и применяем кастомную анимацию после стандартной
@@ -73,46 +74,60 @@ public class PlayerEntityModelMixin {
             return;
         }
 
-        try {
-            // Пробуем разные варианты имен полей (для разных версий Yarn/Mojmap)
-            String[][] fieldNames = {
-                {"pivotX", "pivotY", "pivotZ"},  // Yarn mappings
-                {"x", "y", "z"},                  // Возможные старые имена
-                {"xRot", "yRot", "zRot"}          // Другой вариант
-            };
-
-            for (String[] names : fieldNames) {
-                try {
-                    xField = ModelPart.class.getDeclaredField(names[0]);
-                    yField = ModelPart.class.getDeclaredField(names[1]);
-                    zField = ModelPart.class.getDeclaredField(names[2]);
-
-                    xField.setAccessible(true);
-                    yField.setAccessible(true);
-                    zField.setAccessible(true);
-
-                    System.out.println("[TekiloMod] Found ModelPart position fields: " + names[0] + ", " + names[1] + ", " + names[2]);
-                    break;
-                } catch (NoSuchFieldException ignored) {
-                    xField = null;
-                    yField = null;
-                    zField = null;
-                }
+        synchronized (initLock) {
+            // Double-check locking
+            if (fieldsInitialized) {
+                return;
             }
 
-            if (xField == null) {
-                System.err.println("[TekiloMod] Could not find position fields in ModelPart!");
-                System.err.println("[TekiloMod] Available fields:");
-                for (java.lang.reflect.Field f : ModelPart.class.getDeclaredFields()) {
-                    System.err.println("  - " + f.getName() + " : " + f.getType().getSimpleName());
+            try {
+                // Пробуем разные варианты имен полей (для разных версий Yarn/Mojmap)
+                String[][] fieldNames = {
+                    {"pivotX", "pivotY", "pivotZ"},  // Yarn mappings
+                    {"x", "y", "z"},                  // Возможные старые имена
+                    {"xRot", "yRot", "zRot"}          // Другой вариант
+                };
+
+                java.lang.reflect.Field tempX = null;
+                java.lang.reflect.Field tempY = null;
+                java.lang.reflect.Field tempZ = null;
+
+                for (String[] names : fieldNames) {
+                    try {
+                        tempX = ModelPart.class.getDeclaredField(names[0]);
+                        tempY = ModelPart.class.getDeclaredField(names[1]);
+                        tempZ = ModelPart.class.getDeclaredField(names[2]);
+
+                        tempX.setAccessible(true);
+                        tempY.setAccessible(true);
+                        tempZ.setAccessible(true);
+
+                        // Only assign if all three fields found successfully
+                        xField = tempX;
+                        yField = tempY;
+                        zField = tempZ;
+
+                        System.out.println("[TekiloMod] Found ModelPart position fields: " + names[0] + ", " + names[1] + ", " + names[2]);
+                        break;
+                    } catch (NoSuchFieldException ignored) {
+                        // Try next set of field names
+                    }
                 }
+
+                if (xField == null) {
+                    System.err.println("[TekiloMod] Could not find position fields in ModelPart!");
+                    System.err.println("[TekiloMod] Available fields:");
+                    for (java.lang.reflect.Field f : ModelPart.class.getDeclaredFields()) {
+                        System.err.println("  - " + f.getName() + " : " + f.getType().getSimpleName());
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[TekiloMod] Error initializing fields: " + e.getMessage());
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            System.err.println("[TekiloMod] Error initializing fields: " + e.getMessage());
-            e.printStackTrace();
+
+            fieldsInitialized = true;
         }
-
-        fieldsInitialized = true;
     }
 
     /**

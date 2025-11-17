@@ -36,6 +36,9 @@ public class TekiloMod implements ModInitializer {
 		// Регистрация пакета настроек Item Spawner (C2S)
 		PayloadTypeRegistry.playC2S().register(ItemSpawnerSettingsPayload.ID, ItemSpawnerSettingsPayload.CODEC);
 
+		// Регистрация пакета настроек Zone Capture (C2S)
+		PayloadTypeRegistry.playC2S().register(ZoneSettingsPayload.ID, ZoneSettingsPayload.CODEC);
+
 		// Регистрация обработчиков сетевых пакетов
 		com.tekilo.network.ServerNetworkHandler.register();
 

@@ -13,14 +13,14 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FactionDeathHandler {
 
-    private static final Map<UUID, CustomDeathMessageState> playersWithCustomDeath = new HashMap<>();
+    private static final Map<UUID, CustomDeathMessageState> playersWithCustomDeath = new ConcurrentHashMap<>();
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register(FactionDeathHandler::afterDeath);
@@ -148,5 +148,10 @@ public class FactionDeathHandler {
         private void markCustomDelivered() {
             this.customMessageDelivered = true;
         }
+    }
+
+    // Cleanup method for player disconnect
+    public static void cleanupPlayer(UUID playerId) {
+        playersWithCustomDeath.remove(playerId);
     }
 }

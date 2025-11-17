@@ -145,5 +145,6 @@
   "command.tekilo.mask.already_active": "Mask is already active! %s seconds remaining.",
   "command.tekilo.mask.cooldown": "Please wait %s seconds before using the mask again.",
   "faction.tekilo.communist": "communist",
-  "faction.tekilo.capitalist": "capitalist"
+  "faction.tekilo.capitalist": "capitalist",
+  "zone.tekilo.reward_received": "Capture reward received!"
 }

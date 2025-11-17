@@ -103,24 +103,41 @@ public class AnimationLoader {
      */
     private static AnimationData parseBedrockFormat(JsonObject root, String name) {
         JsonObject animations = root.getAsJsonObject("animations");
-        if (animations == null) {
+        if (animations == null || animations.isEmpty()) {
+            System.err.println("[TekiloMod] No animations found in file: " + name);
             return null;
         }
 
         // Берем первую анимацию из файла
+        if (animations.keySet().isEmpty()) {
+            System.err.println("[TekiloMod] Empty animations object in file: " + name);
+            return null;
+        }
         String firstAnimationName = animations.keySet().iterator().next();
         JsonObject animation = animations.getAsJsonObject(firstAnimationName);
+        if (animation == null) {
+            System.err.println("[TekiloMod] Animation object is null: " + firstAnimationName);
+            return null;
+        }
 
-        float animationLength = animation.get("animation_length").getAsFloat();
+        JsonElement lengthElement = animation.get("animation_length");
+        if (lengthElement == null || !lengthElement.isJsonPrimitive()) {
+            System.err.println("[TekiloMod] Missing or invalid animation_length in: " + name);
+            return null;
+        }
+        float animationLength = lengthElement.getAsFloat();
         AnimationData data = new AnimationData(name, animationLength);
 
         JsonObject bones = animation.getAsJsonObject("bones");
         if (bones != null) {
             for (String boneName : bones.keySet()) {
-                BoneAnimation boneAnim = parseBone(bones.getAsJsonObject(boneName));
-                // Маппим имя кости из Bedrock формата в Minecraft формат
-                String minecraftBoneName = BONE_NAME_MAPPING.getOrDefault(boneName, boneName);
-                data.addBoneAnimation(minecraftBoneName, boneAnim);
+                JsonObject boneData = bones.getAsJsonObject(boneName);
+                if (boneData != null) {
+                    BoneAnimation boneAnim = parseBone(boneData);
+                    // Маппим имя кости из Bedrock формата в Minecraft формат
+                    String minecraftBoneName = BONE_NAME_MAPPING.getOrDefault(boneName, boneName);
+                    data.addBoneAnimation(minecraftBoneName, boneAnim);
+                }
             }
         }
 
@@ -133,11 +150,17 @@ public class AnimationLoader {
     private static AnimationData parseEmotecraftFormat(JsonObject root, String name) {
         JsonObject emote = root.getAsJsonObject("emote");
         if (emote == null) {
+            System.err.println("[TekiloMod] Missing emote object in: " + name);
             return null;
         }
 
         // Вычисляем длину анимации из stopTick
-        int stopTick = emote.get("stopTick").getAsInt();
+        JsonElement stopTickElement = emote.get("stopTick");
+        if (stopTickElement == null || !stopTickElement.isJsonPrimitive()) {
+            System.err.println("[TekiloMod] Missing or invalid stopTick in: " + name);
+            return null;
+        }
+        int stopTick = stopTickElement.getAsInt();
         float animationLength = stopTick / 20.0f; // тики в секунды
 
         AnimationData data = new AnimationData(name, animationLength);
@@ -158,15 +181,22 @@ public class AnimationLoader {
         Map<String, Map<Integer, JsonObject>> boneKeyframes = new HashMap<>();
 
         for (JsonElement moveElement : moves) {
+            if (!moveElement.isJsonObject()) continue;
             JsonObject move = moveElement.getAsJsonObject();
-            int tick = move.get("tick").getAsInt();
+
+            JsonElement tickElement = move.get("tick");
+            if (tickElement == null || !tickElement.isJsonPrimitive()) continue;
+            int tick = tickElement.getAsInt();
             float time = tick / 20.0f; // тики в секунды
 
             // Проверяем каждую возможную кость
             for (String boneName : new String[]{"torso", "head", "leftArm", "rightArm", "leftLeg", "rightLeg"}) {
                 if (move.has(boneName)) {
-                    boneKeyframes.computeIfAbsent(boneName, k -> new TreeMap<>())
-                        .put(tick, move.getAsJsonObject(boneName));
+                    JsonObject boneObj = move.getAsJsonObject(boneName);
+                    if (boneObj != null) {
+                        boneKeyframes.computeIfAbsent(boneName, k -> new TreeMap<>())
+                            .put(tick, boneObj);
+                    }
                 }
             }
         }
@@ -184,17 +214,17 @@ public class AnimationLoader {
 
                 // Позиция (если есть x, y, z)
                 if (transform.has("x") || transform.has("y") || transform.has("z")) {
-                    float x = transform.has("x") ? transform.get("x").getAsFloat() : 0;
-                    float y = transform.has("y") ? transform.get("y").getAsFloat() : 0;
-                    float z = transform.has("z") ? transform.get("z").getAsFloat() : 0;
+                    float x = transform.has("x") && transform.get("x").isJsonPrimitive() ? transform.get("x").getAsFloat() : 0;
+                    float y = transform.has("y") && transform.get("y").isJsonPrimitive() ? transform.get("y").getAsFloat() : 0;
+                    float z = transform.has("z") && transform.get("z").isJsonPrimitive() ? transform.get("z").getAsFloat() : 0;
                     boneAnim.addPositionKeyframe(time, x, y, z);
                 }
 
                 // Вращение (pitch, yaw, roll в радианах уже)
                 if (transform.has("pitch") || transform.has("yaw") || transform.has("roll")) {
-                    float pitch = transform.has("pitch") ? transform.get("pitch").getAsFloat() : 0;
-                    float yaw = transform.has("yaw") ? transform.get("yaw").getAsFloat() : 0;
-                    float roll = transform.has("roll") ? transform.get("roll").getAsFloat() : 0;
+                    float pitch = transform.has("pitch") && transform.get("pitch").isJsonPrimitive() ? transform.get("pitch").getAsFloat() : 0;
+                    float yaw = transform.has("yaw") && transform.get("yaw").isJsonPrimitive() ? transform.get("yaw").getAsFloat() : 0;
+                    float roll = transform.has("roll") && transform.get("roll").isJsonPrimitive() ? transform.get("roll").getAsFloat() : 0;
                     // В Emotecraft формате углы уже в радианах, поэтому используем напрямую
                     boneAnim.addRotationKeyframe(time,
                         (float) Math.toDegrees(pitch),
@@ -218,34 +248,52 @@ public class AnimationLoader {
         // Парсим позицию
         if (boneData.has("position")) {
             JsonObject position = boneData.getAsJsonObject("position");
-            for (String timeStr : position.keySet()) {
-                float time = Float.parseFloat(timeStr);
-                JsonObject keyframe = position.getAsJsonObject(timeStr);
-                JsonArray vector = keyframe.getAsJsonArray("vector");
+            if (position != null) {
+                for (String timeStr : position.keySet()) {
+                    try {
+                        float time = Float.parseFloat(timeStr);
+                        JsonObject keyframe = position.getAsJsonObject(timeStr);
+                        if (keyframe == null) continue;
 
-                boneAnim.addPositionKeyframe(
-                    time,
-                    vector.get(0).getAsFloat(),
-                    vector.get(1).getAsFloat(),
-                    vector.get(2).getAsFloat()
-                );
+                        JsonArray vector = keyframe.getAsJsonArray("vector");
+                        if (vector == null || vector.size() < 3) continue;
+
+                        boneAnim.addPositionKeyframe(
+                            time,
+                            vector.get(0).getAsFloat(),
+                            vector.get(1).getAsFloat(),
+                            vector.get(2).getAsFloat()
+                        );
+                    } catch (NumberFormatException | IllegalStateException e) {
+                        System.err.println("[TekiloMod] Failed to parse position keyframe at time: " + timeStr);
+                    }
+                }
             }
         }
 
         // Парсим вращение
         if (boneData.has("rotation")) {
             JsonObject rotation = boneData.getAsJsonObject("rotation");
-            for (String timeStr : rotation.keySet()) {
-                float time = Float.parseFloat(timeStr);
-                JsonObject keyframe = rotation.getAsJsonObject(timeStr);
-                JsonArray vector = keyframe.getAsJsonArray("vector");
+            if (rotation != null) {
+                for (String timeStr : rotation.keySet()) {
+                    try {
+                        float time = Float.parseFloat(timeStr);
+                        JsonObject keyframe = rotation.getAsJsonObject(timeStr);
+                        if (keyframe == null) continue;
 
-                boneAnim.addRotationKeyframe(
-                    time,
-                    vector.get(0).getAsFloat(),
-                    vector.get(1).getAsFloat(),
-                    vector.get(2).getAsFloat()
-                );
+                        JsonArray vector = keyframe.getAsJsonArray("vector");
+                        if (vector == null || vector.size() < 3) continue;
+
+                        boneAnim.addRotationKeyframe(
+                            time,
+                            vector.get(0).getAsFloat(),
+                            vector.get(1).getAsFloat(),
+                            vector.get(2).getAsFloat()
+                        );
+                    } catch (NumberFormatException | IllegalStateException e) {
+                        System.err.println("[TekiloMod] Failed to parse rotation keyframe at time: " + timeStr);
+                    }
+                }
             }
         }
 

@@ -34,12 +34,27 @@ public class CanvasBlockEntityRenderer implements BlockEntityRenderer<CanvasBloc
 
     @Override
     public void updateRenderState(CanvasBlockEntity entity, CanvasBlockEntityRenderState state, float tickDelta, Vec3d cameraPos, ModelCommandRenderer.CrumblingOverlayCommand crumblingOverlay) {
+        if (entity == null) {
+            return;
+        }
+
         // КРИТИЧЕСКИ ВАЖНО: устанавливаем type для поиска рендерера
         state.type = entity.getType();
 
-        // Копируем данные из BlockEntity в RenderState
-        state.pixels = entity.getPixels().clone();
-        state.facing = entity.getCachedState().get(CanvasBlock.FACING);
+        // Копируем данные из BlockEntity в RenderState с null checks
+        int[] entityPixels = entity.getPixels();
+        if (entityPixels == null) {
+            state.pixels = new int[0];
+        } else {
+            state.pixels = entityPixels.clone();
+        }
+
+        if (entity.getCachedState() != null && entity.getCachedState().contains(CanvasBlock.FACING)) {
+            state.facing = entity.getCachedState().get(CanvasBlock.FACING);
+        } else {
+            state.facing = Direction.NORTH;
+        }
+
         state.editable = entity.isEditable();
         state.canvasWidth = entity.getCanvasWidth();
         state.canvasHeight = entity.getCanvasHeight();
@@ -47,6 +62,12 @@ public class CanvasBlockEntityRenderer implements BlockEntityRenderer<CanvasBloc
         state.pos = entity.getPos();
         state.lightmapCoordinates = LightmapTextureManager.MAX_LIGHT_COORDINATE;
         state.crumblingOverlay = crumblingOverlay;
+
+        // Validate canvas dimensions
+        if (state.canvasWidth < 1 || state.canvasWidth > 6 || state.canvasHeight < 1 || state.canvasHeight > 6) {
+            state.canvasWidth = 1;
+            state.canvasHeight = 1;
+        }
 
         // Debug: логируем один раз
         if (!updateLoggedOnce) {
@@ -63,8 +84,10 @@ public class CanvasBlockEntityRenderer implements BlockEntityRenderer<CanvasBloc
 
         // Создаём или обновляем динамическую текстуру
         int expectedSize = state.canvasWidth * 16 * state.canvasHeight * 16;
-        if (state.pixels != null && state.pixels.length == expectedSize) {
-            state.textureId = CanvasTextureManager.getInstance().getOrCreateTexture(entity.getPos(), state.pixels);
+        if (state.pixels != null && state.pixels.length == expectedSize && state.pos != null) {
+            state.textureId = CanvasTextureManager.getInstance().getOrCreateTexture(state.pos, state.pixels);
+        } else {
+            state.textureId = null;
         }
     }
 

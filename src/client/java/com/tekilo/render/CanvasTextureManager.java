@@ -47,9 +47,17 @@ public class CanvasTextureManager {
         // Calculate dimensions from pixel count (must be square multiple of 16)
         int totalPixels = pixels.length;
         int pixelWidth = (int) Math.sqrt(totalPixels);
+
+        // Prevent division by zero
+        if (pixelWidth == 0) {
+            System.err.println("[TekiloMod] Invalid pixel array size: " + totalPixels);
+            return null;
+        }
+
         int pixelHeight = totalPixels / pixelWidth;
 
-        if (pixelWidth * pixelHeight != totalPixels) {
+        if (pixelWidth * pixelHeight != totalPixels || pixelWidth > 96 || pixelHeight > 96) {
+            System.err.println("[TekiloMod] Invalid canvas dimensions: " + pixelWidth + "x" + pixelHeight);
             return null;
         }
 

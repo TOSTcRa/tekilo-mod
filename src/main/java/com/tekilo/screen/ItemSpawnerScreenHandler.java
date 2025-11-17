@@ -2,6 +2,7 @@ package com.tekilo.screen;
 
 import com.tekilo.ItemSpawnerBlockEntity;
 import com.tekilo.ModScreenHandlers;
+import com.tekilo.network.ItemSpawnerOpenData;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -16,19 +17,28 @@ public class ItemSpawnerScreenHandler extends ScreenHandler {
     private final Inventory inventory;
     private final PropertyDelegate propertyDelegate;
     private final net.minecraft.util.math.BlockPos blockPos;
+    private final String zoneName;
+    private final String captureReward;
 
-    // Client constructor (with block pos from extended data)
-    public ItemSpawnerScreenHandler(int syncId, PlayerInventory playerInventory, net.minecraft.util.math.BlockPos blockPos) {
-        this(syncId, playerInventory, new SimpleInventory(27), new ArrayPropertyDelegate(6), blockPos);
+    // Client constructor (with extended data including strings)
+    public ItemSpawnerScreenHandler(int syncId, PlayerInventory playerInventory, ItemSpawnerOpenData data) {
+        this(syncId, playerInventory, new SimpleInventory(27), new ArrayPropertyDelegate(11), data.pos(), data.zoneName(), data.captureReward());
     }
 
     // Server constructor
     public ItemSpawnerScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory, PropertyDelegate propertyDelegate, net.minecraft.util.math.BlockPos blockPos) {
+        this(syncId, playerInventory, inventory, propertyDelegate, blockPos, "", "");
+    }
+
+    // Full constructor with all parameters
+    public ItemSpawnerScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory, PropertyDelegate propertyDelegate, net.minecraft.util.math.BlockPos blockPos, String zoneName, String captureReward) {
         super(ModScreenHandlers.ITEM_SPAWNER_SCREEN_HANDLER, syncId);
         checkSize(inventory, 27);
         this.inventory = inventory;
         this.propertyDelegate = propertyDelegate;
         this.blockPos = blockPos;
+        this.zoneName = zoneName;
+        this.captureReward = captureReward;
 
         inventory.onOpen(playerInventory.player);
 
@@ -110,7 +120,36 @@ public class ItemSpawnerScreenHandler extends ScreenHandler {
         return propertyDelegate.get(5) == 1;
     }
 
+    // Zone settings getters
+    public int getZoneRadius() {
+        return propertyDelegate.get(6);
+    }
+
+    public int getBaseCaptureTime() {
+        return propertyDelegate.get(7);
+    }
+
+    public int getMinCaptureTime() {
+        return propertyDelegate.get(8);
+    }
+
+    public boolean isZoneEnabled() {
+        return propertyDelegate.get(9) == 1;
+    }
+
+    public int getBossBarColor() {
+        return propertyDelegate.get(10);
+    }
+
     public net.minecraft.util.math.BlockPos getBlockPos() {
         return blockPos;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getCaptureReward() {
+        return captureReward;
     }
 }

@@ -21,6 +21,14 @@ public class ServerEventHandler {
             TeamManager.addPlayerToTeam(server, handler.getPlayer(), faction, isSpy);
         });
 
+        // Очистка при отключении игрока
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            java.util.UUID playerId = handler.getPlayer().getUuid();
+            MaskCommand.cleanupPlayer(playerId);
+            FactionDeathHandler.cleanupPlayer(playerId);
+            ZoneCaptureManager.cleanupPlayer(playerId);
+        });
+
         // Загрузка фракций и инициализация команд при старте сервера
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             // Инициализируем команды
@@ -49,7 +57,8 @@ public class ServerEventHandler {
 
             FactionPersistence.save(server);
             SpyLeakNotifier.shutdown();
-            System.out.println("[TekiloMod] Factions saved to file and SpyLeakNotifier shutdown");
+            MaskCommand.shutdown();
+            System.out.println("[TekiloMod] Factions saved to file and all executors shutdown");
         });
 
         // Периодическое сохранение фракций (каждые 5 минут)

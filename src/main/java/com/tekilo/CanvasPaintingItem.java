@@ -50,12 +50,14 @@ public class CanvasPaintingItem extends Item {
         }
 
         if (!world.isClient()) {
-            // Картина "смотрит" от стены (направление = сторона на которую кликнули)
-            Direction facing = side;
+            // Картина "смотрит" на игрока (противоположно направлению стены)
+            Direction facing = side.getOpposite();
             BlockState canvasState = ModBlocks.CANVAS.getDefaultState().with(CanvasBlock.FACING, facing);
 
             // Проверяем что можно разместить (есть стена позади)
-            if (!canvasState.canPlaceAt(world, placePos)) {
+            // Стена - это блок на который кликнули (blockPos)
+            BlockState wallState = world.getBlockState(blockPos);
+            if (!wallState.isSideSolidFullSquare(world, blockPos, side)) {
                 return ActionResult.FAIL;
             }
 

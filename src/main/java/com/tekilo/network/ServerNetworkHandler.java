@@ -16,8 +16,20 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
 
 public class ServerNetworkHandler {
+    private static final double MAX_INTERACTION_DISTANCE = 8.0;
+    private static final int MAX_STRING_LENGTH = 64;
+
+    private static boolean isWithinDistance(ServerPlayerEntity player, BlockPos pos) {
+        return player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= MAX_INTERACTION_DISTANCE * MAX_INTERACTION_DISTANCE;
+    }
+
+    private static boolean canEditItemSpawner(ServerPlayerEntity player) {
+        return player.hasPermissionLevel(2); // OP level 2+
+    }
+
     public static void register() {
         // Регистрация обработчика анимаций
         ServerPlayNetworking.registerGlobalReceiver(
@@ -82,6 +94,18 @@ public class ServerNetworkHandler {
                     ServerWorld world = player.getEntityWorld();
                     if (world == null) return;
 
+                    // Validate dimensions
+                    if (payload.width() < 1 || payload.width() > 6 || payload.height() < 1 || payload.height() > 6) {
+                        System.err.println("[TekiloMod] Invalid canvas size from " + player.getName().getString());
+                        return;
+                    }
+
+                    // Check proximity
+                    if (!isWithinDistance(player, payload.pos())) {
+                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " too far from canvas at " + payload.pos());
+                        return;
+                    }
+
                     BlockEntity be = world.getBlockEntity(payload.pos());
                     if (be instanceof CanvasBlockEntity canvas) {
                         if (!canvas.isSizeChosen()) {
@@ -118,6 +142,18 @@ public class ServerNetworkHandler {
                     // Validate pixel array
                     if (payload.pixels() == null || payload.pixels().length == 0) {
                         System.err.println("[TekiloMod] Invalid canvas payload from " + player.getName().getString());
+                        return;
+                    }
+
+                    // Validate dimensions (already checked in payload deserialization, but double-check)
+                    if (payload.canvasWidth() < 1 || payload.canvasWidth() > 6 || payload.canvasHeight() < 1 || payload.canvasHeight() > 6) {
+                        System.err.println("[TekiloMod] Invalid canvas dimensions from " + player.getName().getString());
+                        return;
+                    }
+
+                    // Check proximity
+                    if (!isWithinDistance(player, payload.pos())) {
+                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " too far from canvas at " + payload.pos());
                         return;
                     }
 
@@ -183,6 +219,13 @@ public class ServerNetworkHandler {
                     ServerPlayerEntity player = context.player();
                     if (player == null) return;
 
+                    // Check operator permission
+                    if (!canEditItemSpawner(player)) {
+                        player.sendMessage(Text.literal("§cУ вас нет прав для изменения настроек Item Spawner!"), false);
+                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " tried to edit Item Spawner without permission");
+                        return;
+                    }
+
                     ServerWorld world = player.getEntityWorld();
                     if (world == null) return;
 
@@ -210,6 +253,68 @@ public class ServerNetworkHandler {
                             + ", interval=" + payload.spawnInterval()
                             + ", count=" + payload.itemCount()
                             + ", enabled=" + payload.enabled());
+                    }
+                });
+            }
+        );
+
+        // Обработчик настроек Zone Capture
+        ServerPlayNetworking.registerGlobalReceiver(
+            ZoneSettingsPayload.ID,
+            (payload, context) -> {
+                context.server().execute(() -> {
+                    ServerPlayerEntity player = context.player();
+                    if (player == null) return;
+
+                    // Check operator permission
+                    if (!canEditItemSpawner(player)) {
+                        player.sendMessage(Text.literal("§cУ вас нет прав для изменения настроек зоны!"), false);
+                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " tried to edit Zone settings without permission");
+                        return;
+                    }
+
+                    ServerWorld world = player.getEntityWorld();
+                    if (world == null) return;
+
+                    // Validate string lengths to prevent DoS
+                    if (payload.zoneName() != null && payload.zoneName().length() > MAX_STRING_LENGTH) {
+                        System.err.println("[TekiloMod] Zone name too long from " + player.getName().getString());
+                        return;
+                    }
+                    if (payload.captureReward() != null && payload.captureReward().length() > MAX_STRING_LENGTH) {
+                        System.err.println("[TekiloMod] Capture reward too long from " + player.getName().getString());
+                        return;
+                    }
+
+                    // Validate payload values
+                    if (payload.zoneRadius() < 10 || payload.zoneRadius() > 1000 ||
+                        payload.baseCaptureTime() < 1200 || payload.baseCaptureTime() > 72000 ||
+                        payload.minCaptureTime() < 600 || payload.minCaptureTime() > payload.baseCaptureTime() ||
+                        payload.bossBarColor() < 0 || payload.bossBarColor() > 6) {
+                        System.err.println("[TekiloMod] Invalid Zone settings from " + player.getName().getString());
+                        return;
+                    }
+
+                    BlockEntity be = world.getBlockEntity(payload.pos());
+                    if (be instanceof ItemSpawnerBlockEntity spawner) {
+                        // Обновляем настройки зоны
+                        spawner.setZoneRadius(payload.zoneRadius());
+                        spawner.setBaseCaptureTime(payload.baseCaptureTime());
+                        spawner.setMinCaptureTime(payload.minCaptureTime());
+                        spawner.setZoneEnabled(payload.zoneEnabled());
+                        spawner.setZoneName(payload.zoneName());
+                        spawner.setBossBarColor(payload.bossBarColor());
+                        spawner.setCaptureReward(payload.captureReward());
+
+                        System.out.println("[TekiloMod] Zone settings updated at " + payload.pos()
+                            + " by " + player.getName().getString()
+                            + " - zoneRadius=" + payload.zoneRadius()
+                            + ", baseCaptureTime=" + payload.baseCaptureTime()
+                            + ", minCaptureTime=" + payload.minCaptureTime()
+                            + ", zoneEnabled=" + payload.zoneEnabled()
+                            + ", zoneName=" + payload.zoneName()
+                            + ", bossBarColor=" + payload.bossBarColor()
+                            + ", captureReward=" + payload.captureReward());
                     }
                 });
             }
