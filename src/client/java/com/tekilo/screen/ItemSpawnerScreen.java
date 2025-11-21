@@ -403,15 +403,23 @@ public class ItemSpawnerScreen extends HandledScreen<ItemSpawnerScreenHandler> {
             context.fill(panelX + 45, panelY - 18, panelX + 90, panelY, 0xFF373737);
         }
 
-        // Panel background (dark gray)
+        // Panel background with gradient effect
         context.fill(panelX - 2, panelY - 2, panelX + panelW + 2, panelY + panelH + 2, 0xFF000000);
         context.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xFF373737);
 
-        // Panel border (lighter)
-        context.fill(panelX, panelY, panelX + panelW, panelY + 1, 0xFF5A5A5A);
-        context.fill(panelX, panelY + panelH - 1, panelX + panelW, panelY + panelH, 0xFF5A5A5A);
-        context.fill(panelX, panelY, panelX + 1, panelY + panelH, 0xFF5A5A5A);
-        context.fill(panelX + panelW - 1, panelY, panelX + panelW, panelY + panelH, 0xFF5A5A5A);
+        // Inner panel gradient (darker at bottom)
+        context.fill(panelX + 1, panelY + 1, panelX + panelW - 1, panelY + panelH / 3, 0xFF3D3D3D);
+        context.fill(panelX + 1, panelY + panelH / 3, panelX + panelW - 1, panelY + 2 * panelH / 3, 0xFF353535);
+        context.fill(panelX + 1, panelY + 2 * panelH / 3, panelX + panelW - 1, panelY + panelH - 1, 0xFF2D2D2D);
+
+        // Panel border (3D effect)
+        context.fill(panelX, panelY, panelX + panelW, panelY + 1, 0xFF5A5A5A); // top highlight
+        context.fill(panelX, panelY, panelX + 1, panelY + panelH, 0xFF5A5A5A); // left highlight
+        context.fill(panelX, panelY + panelH - 1, panelX + panelW, panelY + panelH, 0xFF1A1A1A); // bottom shadow
+        context.fill(panelX + panelW - 1, panelY, panelX + panelW, panelY + panelH, 0xFF1A1A1A); // right shadow
+
+        // Inner highlight line
+        context.fill(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + 3, 0xFF4A4A4A);
 
         // === DRAW SETTING LABELS ===
         if (!showZonePanel) {
@@ -447,8 +455,19 @@ public class ItemSpawnerScreen extends HandledScreen<ItemSpawnerScreenHandler> {
         // Value centered between - and + buttons (buttons at X+5 to X+25 and X+65 to X+85)
         // Center is at X+45
         int valueWidth = this.textRenderer.getWidth(value);
+        int centerX = panelX + 45;
+        int textX = centerX - valueWidth / 2;
+
+        // Draw value background (LCD-like display)
+        int bgX = panelX + 27;
+        int bgY = y - 2;
+        int bgW = 36;
+        int bgH = 12;
+        context.fill(bgX, bgY, bgX + bgW, bgY + bgH, 0xFF1A1A1A);
+        context.fill(bgX + 1, bgY + 1, bgX + bgW - 1, bgY + bgH - 1, 0xFF0A0A0A);
+
         // Use ARGB format (0xAARRGGBB) - alpha channel is required in 1.21+
-        context.drawText(this.textRenderer, Text.literal(value), panelX + 45 - valueWidth / 2, y, 0xFF55FF55, true);
+        context.drawText(this.textRenderer, Text.literal(value), textX, y, 0xFF55FF55, true);
     }
 
     private String formatTime(int seconds) {

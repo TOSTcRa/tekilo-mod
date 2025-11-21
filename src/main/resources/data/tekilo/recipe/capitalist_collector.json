@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "BBB",
+    "OCO",
+    "BBB"
+  ],
+  "key": {
+    "B": "minecraft:blue_wool",
+    "O": "minecraft:obsidian",
+    "C": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "tekilo:capitalist_collector",
+    "count": 1
+  }
+}

@@ -14,14 +14,23 @@ public class SpyLeakNotifier {
 	private static final Random random = new Random();
 
 	public static void scheduleLeakNotification(MinecraftServer server, FactionManager.Faction faction) {
+		// Check if scheduler is still running
+		if (scheduler.isShutdown() || scheduler.isTerminated()) {
+			return;
+		}
+
 		int delayMinutes = 3 + random.nextInt(3);
 		long delaySeconds = delayMinutes * 60L;
 
-		scheduler.schedule(() -> {
-			server.execute(() -> {
-				notifyFaction(server, faction);
-			});
-		}, delaySeconds, TimeUnit.SECONDS);
+		try {
+			scheduler.schedule(() -> {
+				server.execute(() -> {
+					notifyFaction(server, faction);
+				});
+			}, delaySeconds, TimeUnit.SECONDS);
+		} catch (Exception e) {
+			// Ignore if scheduler was shut down during scheduling
+		}
 	}
 
 	private static void notifyFaction(MinecraftServer server, FactionManager.Faction faction) {
@@ -43,6 +52,17 @@ public class SpyLeakNotifier {
 	}
 
 	public static void shutdown() {
-		scheduler.shutdown();
+		if (!scheduler.isShutdown()) {
+			scheduler.shutdown();
+			try {
+				// Wait for existing tasks to complete
+				if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+					scheduler.shutdownNow();
+				}
+			} catch (InterruptedException e) {
+				scheduler.shutdownNow();
+				Thread.currentThread().interrupt();
+			}
+		}
 	}
 }

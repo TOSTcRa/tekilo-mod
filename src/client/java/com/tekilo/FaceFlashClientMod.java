@@ -4,8 +4,12 @@ import com.tekilo.animation.AnimationResourceLoader;
 import com.tekilo.render.CanvasBlockEntityRenderer;
 import com.tekilo.render.CanvasPaintingTooltipComponent;
 import com.tekilo.render.CanvasTextureManager;
+import com.tekilo.render.DeliciousnessEffectRenderer;
+import com.tekilo.render.ZoneVisualizationManager;
+import com.tekilo.screen.FactionCollectorScreen;
 import com.tekilo.screen.ItemSpawnerScreen;
 import com.tekilo.screen.ItemSpawnerScreenHandler;
+import com.tekilo.screen.SpawnerLinkScreen;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
@@ -68,6 +72,8 @@ public class FaceFlashClientMod implements ClientModInitializer {
 
         // Регистрация GUI экранов
         HandledScreens.register(ModScreenHandlers.ITEM_SPAWNER_SCREEN_HANDLER, ItemSpawnerScreen::new);
+        HandledScreens.register(ModScreenHandlers.FACTION_COLLECTOR_SCREEN_HANDLER, FactionCollectorScreen::new);
+        HandledScreens.register(ModScreenHandlers.SPAWNER_LINK_SCREEN_HANDLER, SpawnerLinkScreen::new);
 
         // Регистрация BlockEntityRenderer для Canvas
         BlockEntityRendererFactories.register(ModBlockEntities.CANVAS, CanvasBlockEntityRenderer::new);
@@ -77,9 +83,10 @@ public class FaceFlashClientMod implements ClientModInitializer {
             CanvasTextureManager.initialize();
         });
 
-        // Очистка текстур при выходе из мира
+        // Очистка текстур и зон при выходе из мира
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
             CanvasTextureManager.getInstance().clearAllTextures();
+            ZoneVisualizationManager.clear();
         });
 
         // Регистрация кастомного TooltipComponent для Canvas Painting
@@ -100,6 +107,9 @@ public class FaceFlashClientMod implements ClientModInitializer {
             if (client.player == null || client.player.getEntityWorld() == null) {
                 return;
             }
+
+            // Render deliciousness effect
+            DeliciousnessEffectRenderer.renderEffect(drawContext, renderTickCounter);
 
             if (client.player.getHealth() <= 4.0F && client.player.isAlive()) {
                 renderFaceOverlay(drawContext, client);

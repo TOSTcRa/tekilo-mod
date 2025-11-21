@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "SSS",
+    "SWS",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stick",
+    "W": "minecraft:white_wool"
+  },
+  "result": {
+    "id": "tekilo:canvas",
+    "count": 1
+  }
+}

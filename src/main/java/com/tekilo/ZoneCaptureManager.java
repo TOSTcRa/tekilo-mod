@@ -1,5 +1,7 @@
 package com.tekilo;
 
+import com.tekilo.network.ZoneVisualizationPayload;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
@@ -20,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ZoneCaptureManager {
     private static final Map<BlockPos, ZoneData> zones = new ConcurrentHashMap<>();
     private static long lastTickTime = 0;
+    private static long lastVisualizationSyncTime = 0;
+    private static final long VISUALIZATION_SYNC_INTERVAL = 20; // Sync every second (20 ticks)
 
     public static void registerZone(BlockPos spawnerPos) {
         if (!zones.containsKey(spawnerPos)) {
@@ -35,8 +39,29 @@ public class ZoneCaptureManager {
     }
 
     public static void tick(ServerWorld world) {
-        for (ZoneData zone : zones.values()) {
+        // Use iterator to safely remove invalid zones during iteration
+        Iterator<Map.Entry<BlockPos, ZoneData>> iterator = zones.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<BlockPos, ZoneData> entry = iterator.next();
+            ZoneData zone = entry.getValue();
+
+            // Check if spawner still exists
+            BlockEntity be = world.getBlockEntity(zone.center);
+            if (!(be instanceof ItemSpawnerBlockEntity)) {
+                // Spawner was removed or replaced, cleanup and remove zone
+                zone.cleanup();
+                iterator.remove();
+                continue;
+            }
+
             zone.tick(world);
+        }
+
+        // Sync visualization data to clients periodically
+        long currentTime = world.getTime();
+        if (currentTime - lastVisualizationSyncTime >= VISUALIZATION_SYNC_INTERVAL) {
+            lastVisualizationSyncTime = currentTime;
+            syncVisualizationToClients(world);
         }
     }
 
@@ -46,6 +71,36 @@ public class ZoneCaptureManager {
         if (currentTime != lastTickTime) {
             lastTickTime = currentTime;
             tick(world);
+        }
+    }
+
+    private static void syncVisualizationToClients(ServerWorld world) {
+        List<ZoneVisualizationPayload.ZoneVisualizationData> zoneDataList = new ArrayList<>();
+
+        for (Map.Entry<BlockPos, ZoneData> entry : zones.entrySet()) {
+            ZoneData zone = entry.getValue();
+            BlockEntity be = world.getBlockEntity(zone.center);
+
+            if (be instanceof ItemSpawnerBlockEntity spawner) {
+                float progress = zone.requiredCaptureTime > 0 ?
+                    (float) zone.captureProgress / zone.requiredCaptureTime : 0.0f;
+
+                zoneDataList.add(new ZoneVisualizationPayload.ZoneVisualizationData(
+                    zone.center,
+                    spawner.getZoneRadius(),
+                    zone.ownerFaction,
+                    zone.capturingFaction,
+                    progress,
+                    spawner.getZoneName(),
+                    spawner.isZoneEnabled()
+                ));
+            }
+        }
+
+        // Send to all players in the world
+        ZoneVisualizationPayload payload = new ZoneVisualizationPayload(zoneDataList);
+        for (ServerPlayerEntity player : world.getPlayers()) {
+            ServerPlayNetworking.send(player, payload);
         }
     }
 
@@ -91,6 +146,19 @@ public class ZoneCaptureManager {
                 // Скрываем bossbar если зона выключена
                 bossBar.clearPlayers();
                 playersInZone.clear();
+                return;
+            }
+
+            // Проверяем разблокирован ли спавнер (захвачен ли родитель)
+            if (!spawner.isUnlocked(world)) {
+                // Спавнер заблокирован - показываем игрокам что зона недоступна
+                updatePlayersInZone(world, spawner.getZoneRadius());
+                updateLockedBossBar(spawner.getZoneName());
+                // Сбрасываем прогресс захвата
+                if (captureProgress > 0 || capturingFaction != FactionManager.Faction.NONE) {
+                    captureProgress = 0;
+                    capturingFaction = FactionManager.Faction.NONE;
+                }
                 return;
             }
 
@@ -163,12 +231,13 @@ public class ZoneCaptureManager {
             }
 
             // Удаляем игроков, покинувших зону
-            for (UUID uuid : new HashSet<>(playersInZone)) {
-                if (!currentPlayers.contains(uuid)) {
-                    ServerPlayerEntity player = world.getServer().getPlayerManager().getPlayer(uuid);
-                    if (player != null) {
-                        bossBar.removePlayer(player);
-                    }
+            Set<UUID> playersToRemove = new HashSet<>(playersInZone);
+            playersToRemove.removeAll(currentPlayers);
+
+            for (UUID uuid : playersToRemove) {
+                ServerPlayerEntity player = world.getServer().getPlayerManager().getPlayer(uuid);
+                if (player != null) {
+                    bossBar.removePlayer(player);
                 }
             }
 
@@ -251,6 +320,14 @@ public class ZoneCaptureManager {
             }
         }
 
+        private void updateLockedBossBar(String zoneName) {
+            String displayName = zoneName.isEmpty() ? "Zone" : zoneName;
+            bossBar.setPercent(0.0f);
+            bossBar.setName(Text.literal(displayName + " - ")
+                .append(Text.translatable("zone.tekilo.locked")));
+            bossBar.setColor(BossBar.Color.RED);
+        }
+
         private void notifyCapture(ServerWorld world, FactionManager.Faction faction, String zoneName, String captureReward) {
             String factionName = faction == FactionManager.Faction.COMMUNIST ?
                 "Communists" : "Capitalists";
@@ -298,15 +375,34 @@ public class ZoneCaptureManager {
             bossBar.clearPlayers();
         }
 
-        public void removePlayer(UUID playerId) {
+        public void removePlayer(UUID playerId, ServerWorld world) {
             playersInZone.remove(playerId);
+            // Also remove from boss bar
+            ServerPlayerEntity player = world.getServer().getPlayerManager().getPlayer(playerId);
+            if (player != null) {
+                bossBar.removePlayer(player);
+            }
         }
     }
 
     // Cleanup when player disconnects - remove from all zones
     public static void cleanupPlayer(UUID playerId) {
+        // Try to find player's world from any zone that has this player
         for (ZoneData zone : zones.values()) {
-            zone.removePlayer(playerId);
+            if (zone.playersInZone.contains(playerId)) {
+                // We can't reliably get the world here since player is disconnecting
+                // Just remove from tracking, the boss bar will be cleaned automatically
+                zone.playersInZone.remove(playerId);
+            }
         }
+    }
+
+    // Get zone owner faction
+    public static FactionManager.Faction getZoneOwner(BlockPos spawnerPos) {
+        ZoneData data = zones.get(spawnerPos);
+        if (data == null) {
+            return FactionManager.Faction.NONE;
+        }
+        return data.ownerFaction;
     }
 }

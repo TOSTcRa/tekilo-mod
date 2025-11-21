@@ -81,6 +81,26 @@ public class ModBlocks {
         true
     );
 
+    public static final Block COMMUNIST_COLLECTOR = register(
+        "communist_collector",
+        CommunistCollectorBlock::new,
+        AbstractBlock.Settings.create()
+            .strength(2.5f)
+            .sounds(BlockSoundGroup.WOOD)
+            .requiresTool(),
+        true
+    );
+
+    public static final Block CAPITALIST_COLLECTOR = register(
+        "capitalist_collector",
+        CapitalistCollectorBlock::new,
+        AbstractBlock.Settings.create()
+            .strength(2.5f)
+            .sounds(BlockSoundGroup.WOOD)
+            .requiresTool(),
+        true
+    );
+
     private static Block register(String name, Function<AbstractBlock.Settings, Block> blockFactory,
                                   AbstractBlock.Settings settings, boolean shouldRegisterItem) {
         RegistryKey<Block> blockKey = keyOfBlock(name);

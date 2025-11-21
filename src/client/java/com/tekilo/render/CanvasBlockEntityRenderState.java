@@ -14,4 +14,5 @@ public class CanvasBlockEntityRenderState extends BlockEntityRenderState {
     public Identifier textureId;
     public int canvasWidth = 1; // В блоках
     public int canvasHeight = 1; // В блоках
+    public boolean isMaster = true; // Только главный блок рендерит картину
 }

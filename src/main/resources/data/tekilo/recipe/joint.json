@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:paper",
+    "tekilo:weed_clump",
+    "tekilo:weed_clump",
+    "tekilo:weed_clump"
+  ],
+  "result": {
+    "id": "tekilo:joint",
+    "count": 3
+  }
+}

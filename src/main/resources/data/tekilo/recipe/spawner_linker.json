@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    " EP",
+    " RE",
+    "S  "
+  ],
+  "key": {
+    "E": "minecraft:ender_pearl",
+    "P": "minecraft:ender_eye",
+    "R": "minecraft:redstone",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "tekilo:spawner_linker",
+    "count": 1
+  }
+}

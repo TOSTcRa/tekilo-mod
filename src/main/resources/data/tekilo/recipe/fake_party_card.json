@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "DDD",
-    "DCD",
-    "DDD"
+    "RRR",
+    "RPR",
+    "RRR"
   ],
   "key": {
-    "D": "minecraft:dirt",
-    "C": "minecraft:cobblestone"
+    "R": "minecraft:red_dye",
+    "P": "minecraft:paper"
   },
   "result": {
     "id": "tekilo:fake_party_card",

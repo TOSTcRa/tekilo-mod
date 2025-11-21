@@ -19,6 +19,18 @@ public class ModBlockEntities {
         FabricBlockEntityTypeBuilder.create(CanvasBlockEntity::new, ModBlocks.CANVAS).build()
     );
 
+    public static final BlockEntityType<CommunistCollectorBlockEntity> COMMUNIST_COLLECTOR = Registry.register(
+        Registries.BLOCK_ENTITY_TYPE,
+        Identifier.of("tekilo", "communist_collector"),
+        FabricBlockEntityTypeBuilder.create(CommunistCollectorBlockEntity::new, ModBlocks.COMMUNIST_COLLECTOR).build()
+    );
+
+    public static final BlockEntityType<CapitalistCollectorBlockEntity> CAPITALIST_COLLECTOR = Registry.register(
+        Registries.BLOCK_ENTITY_TYPE,
+        Identifier.of("tekilo", "capitalist_collector"),
+        FabricBlockEntityTypeBuilder.create(CapitalistCollectorBlockEntity::new, ModBlocks.CAPITALIST_COLLECTOR).build()
+    );
+
     public static void initialize() {
         System.out.println("[TekiloMod] Block entities initialized!");
     }

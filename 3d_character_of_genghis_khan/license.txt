@@ -1,0 +1,11 @@
+Model Information:
+* title:	3d character of Genghis Khan
+* source:	https://sketchfab.com/3d-models/3d-character-of-genghis-khan-b783a334bf354634b413d59f41613ca5
+* author:	FrandProductions (https://sketchfab.com/frand88)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "3d character of Genghis Khan" (https://sketchfab.com/3d-models/3d-character-of-genghis-khan-b783a334bf354634b413d59f41613ca5) by FrandProductions (https://sketchfab.com/frand88) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

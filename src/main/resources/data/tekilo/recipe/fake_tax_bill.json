@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "DDD",
-    "DID",
-    "DDD"
+    "BBB",
+    "BPB",
+    "BBB"
   ],
   "key": {
-    "D": "minecraft:dirt",
-    "I": "minecraft:iron_ingot"
+    "B": "minecraft:blue_dye",
+    "P": "minecraft:paper"
   },
   "result": {
     "id": "tekilo:fake_tax_bill",

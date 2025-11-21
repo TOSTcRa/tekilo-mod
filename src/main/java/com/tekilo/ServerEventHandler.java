@@ -8,7 +8,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ServerEventHandler {
-    private static ScheduledExecutorService autoSaveExecutor;
+    private static volatile ScheduledExecutorService autoSaveExecutor;
+    private static final Object EXECUTOR_LOCK = new Object();
 
     public static void register() {
         // Синхронизация фракции при входе игрока
@@ -42,17 +43,20 @@ public class ServerEventHandler {
 
         // Сохранение фракций при остановке сервера
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            // Shutdown auto-save executor
-            if (autoSaveExecutor != null && !autoSaveExecutor.isShutdown()) {
-                autoSaveExecutor.shutdown();
-                try {
-                    if (!autoSaveExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+            // Shutdown auto-save executor (thread-safe)
+            synchronized (EXECUTOR_LOCK) {
+                if (autoSaveExecutor != null && !autoSaveExecutor.isShutdown()) {
+                    autoSaveExecutor.shutdown();
+                    try {
+                        if (!autoSaveExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                            autoSaveExecutor.shutdownNow();
+                        }
+                    } catch (InterruptedException e) {
                         autoSaveExecutor.shutdownNow();
+                        Thread.currentThread().interrupt();
                     }
-                } catch (InterruptedException e) {
-                    autoSaveExecutor.shutdownNow();
+                    autoSaveExecutor = null;
                 }
-                autoSaveExecutor = null;
             }
 
             FactionPersistence.save(server);
@@ -63,25 +67,27 @@ public class ServerEventHandler {
 
         // Периодическое сохранение фракций (каждые 5 минут)
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            // Prevent duplicate executor creation
-            if (autoSaveExecutor != null && !autoSaveExecutor.isShutdown()) {
-                return;
-            }
-
-            autoSaveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "TekiloMod-AutoSave");
-                t.setDaemon(true);
-                return t;
-            });
-
-            autoSaveExecutor.scheduleAtFixedRate(() -> {
-                if (!server.isStopped()) {
-                    server.execute(() -> {
-                        FactionPersistence.save(server);
-                        System.out.println("[TekiloMod] Factions auto-saved");
-                    });
+            // Prevent duplicate executor creation (thread-safe)
+            synchronized (EXECUTOR_LOCK) {
+                if (autoSaveExecutor != null && !autoSaveExecutor.isShutdown()) {
+                    return;
                 }
-            }, 5, 5, TimeUnit.MINUTES);
+
+                autoSaveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                    Thread t = new Thread(r, "TekiloMod-AutoSave");
+                    t.setDaemon(true);
+                    return t;
+                });
+
+                autoSaveExecutor.scheduleAtFixedRate(() -> {
+                    if (!server.isStopped()) {
+                        server.execute(() -> {
+                            FactionPersistence.save(server);
+                            System.out.println("[TekiloMod] Factions auto-saved");
+                        });
+                    }
+                }, 5, 5, TimeUnit.MINUTES);
+            }
         });
     }
 }

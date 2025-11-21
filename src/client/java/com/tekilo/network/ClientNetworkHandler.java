@@ -5,6 +5,7 @@ import com.tekilo.FactionManager;
 import com.tekilo.animation.AnimationData;
 import com.tekilo.animation.AnimationLoader;
 import com.tekilo.animation.AnimationManager;
+import com.tekilo.render.ZoneVisualizationManager;
 import com.tekilo.screen.CanvasScreen;
 import com.tekilo.screen.CanvasSizeScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -118,6 +119,16 @@ public class ClientNetworkHandler {
                         // Принудительно обновляем рендеринг
                         world.updateListeners(payload.pos(), canvas.getCachedState(), canvas.getCachedState(), 3);
                     }
+                });
+            }
+        );
+
+        // Регистрация обработчика визуализации зон
+        ClientPlayNetworking.registerGlobalReceiver(
+            ZoneVisualizationPayload.ID,
+            (payload, context) -> {
+                context.client().execute(() -> {
+                    ZoneVisualizationManager.updateZones(payload.zones());
                 });
             }
         );

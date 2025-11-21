@@ -12,6 +12,7 @@ import net.minecraft.util.math.BlockPos;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 
 @Environment(EnvType.CLIENT)
 public class CanvasTextureManager {
@@ -20,7 +21,7 @@ public class CanvasTextureManager {
     private final TextureManager textureManager;
     private final Map<BlockPos, NativeImageBackedTexture> textures = new ConcurrentHashMap<>();
     private final Map<BlockPos, Identifier> textureIds = new ConcurrentHashMap<>();
-    private final Map<BlockPos, int[]> lastPixelData = new ConcurrentHashMap<>();
+    private final Map<BlockPos, Integer> lastPixelHash = new ConcurrentHashMap<>();
 
     private CanvasTextureManager(TextureManager textureManager) {
         this.textureManager = textureManager;
@@ -63,9 +64,10 @@ public class CanvasTextureManager {
 
         // Check if we already have this texture and if pixels changed
         if (textureIds.containsKey(pos)) {
-            int[] lastPixels = lastPixelData.get(pos);
-            if (lastPixels != null && lastPixels.length == pixels.length && !pixelsChanged(lastPixels, pixels)) {
-                // Pixels haven't changed, return cached texture
+            Integer lastHash = lastPixelHash.get(pos);
+            int currentHash = Arrays.hashCode(pixels);
+            if (lastHash != null && lastHash == currentHash) {
+                // Pixels haven't changed (hash match), return cached texture
                 return textureIds.get(pos);
             }
         }
@@ -116,24 +118,16 @@ public class CanvasTextureManager {
             texture.upload();
         }
 
-        // Cache the pixel data
-        lastPixelData.put(pos, pixels.clone());
+        // Cache the pixel data hash instead of cloning entire array
+        lastPixelHash.put(pos, Arrays.hashCode(pixels));
 
         return textureId;
-    }
-
-    private boolean pixelsChanged(int[] old, int[] newPixels) {
-        if (old.length != newPixels.length) return true;
-        for (int i = 0; i < old.length; i++) {
-            if (old[i] != newPixels[i]) return true;
-        }
-        return false;
     }
 
     public void removeTexture(BlockPos pos) {
         NativeImageBackedTexture texture = textures.remove(pos);
         Identifier textureId = textureIds.remove(pos);
-        lastPixelData.remove(pos);
+        lastPixelHash.remove(pos);
 
         if (texture != null) {
             texture.close();
@@ -153,7 +147,7 @@ public class CanvasTextureManager {
         }
         textures.clear();
         textureIds.clear();
-        lastPixelData.clear();
+        lastPixelHash.clear();
     }
 
     public boolean hasTexture(BlockPos pos) {

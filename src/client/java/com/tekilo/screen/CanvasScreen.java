@@ -8,7 +8,9 @@ import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
@@ -19,6 +21,13 @@ import java.util.List;
 @Environment(EnvType.CLIENT)
 public class CanvasScreen extends Screen {
     private static final int MAX_CANVAS_DISPLAY_SIZE = 400; // Максимальный размер отображения холста в пикселях экрана
+
+    // Icon textures
+    private static final Identifier ICON_BRUSH = Identifier.of("tekilo", "textures/gui/icon_brush.png");
+    private static final Identifier ICON_FILL = Identifier.of("tekilo", "textures/gui/icon_fill.png");
+    private static final Identifier ICON_ERASER = Identifier.of("tekilo", "textures/gui/icon_eraser.png");
+    private static final Identifier ICON_CLEAR = Identifier.of("tekilo", "textures/gui/icon_clear.png");
+    private static final Identifier ICON_UNDO = Identifier.of("tekilo", "textures/gui/icon_undo.png");
 
     // Extended palette with more colors
     private static final int[] PALETTE = {
@@ -80,11 +89,11 @@ public class CanvasScreen extends Screen {
         int toolbarY = canvasStartY;
 
         // === TOOL BUTTONS (Left side) ===
-        this.brushBtn = ButtonWidget.builder(Text.literal("B"), btn -> selectTool(Tool.BRUSH))
+        this.brushBtn = ButtonWidget.builder(Text.empty(), btn -> selectTool(Tool.BRUSH))
             .dimensions(toolbarX, toolbarY, 25, 25).build();
-        this.fillBtn = ButtonWidget.builder(Text.literal("F"), btn -> selectTool(Tool.FILL))
+        this.fillBtn = ButtonWidget.builder(Text.empty(), btn -> selectTool(Tool.FILL))
             .dimensions(toolbarX, toolbarY + 30, 25, 25).build();
-        this.eraserBtn = ButtonWidget.builder(Text.literal("E"), btn -> selectTool(Tool.ERASER))
+        this.eraserBtn = ButtonWidget.builder(Text.empty(), btn -> selectTool(Tool.ERASER))
             .dimensions(toolbarX, toolbarY + 60, 25, 25).build();
 
         this.addDrawableChild(brushBtn);
@@ -94,9 +103,9 @@ public class CanvasScreen extends Screen {
         // === ACTION BUTTONS (Right side) ===
         int actionX = canvasStartX + canvasDisplayWidth + 10;
 
-        this.undoBtn = ButtonWidget.builder(Text.literal("<"), btn -> undo())
+        this.undoBtn = ButtonWidget.builder(Text.empty(), btn -> undo())
             .dimensions(actionX, toolbarY, 25, 25).build();
-        this.clearBtn = ButtonWidget.builder(Text.literal("X"), btn -> clearCanvas())
+        this.clearBtn = ButtonWidget.builder(Text.empty(), btn -> clearCanvas())
             .dimensions(actionX, toolbarY + 30, 25, 25).build();
 
         this.addDrawableChild(undoBtn);
@@ -199,6 +208,16 @@ public class CanvasScreen extends Screen {
         // Highlight current tool
         int toolHighlightY = canvasStartY + (currentTool == Tool.BRUSH ? 0 : currentTool == Tool.FILL ? 30 : 60);
         context.fill(toolbarX - 2, toolHighlightY - 2, toolbarX + 27, toolHighlightY + 27, 0xFF55FF55);
+
+        // Draw tool icons on buttons
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_BRUSH, toolbarX + 4, canvasStartY + 4, 0, 0, 16, 16, 16, 16);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_FILL, toolbarX + 4, canvasStartY + 34, 0, 0, 16, 16, 16, 16);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_ERASER, toolbarX + 4, canvasStartY + 64, 0, 0, 16, 16, 16, 16);
+
+        // Draw action icons
+        int actionX = canvasStartX + canvasDisplayWidth + 10;
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_UNDO, actionX + 4, canvasStartY + 4, 0, 0, 16, 16, 16, 16);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, ICON_CLEAR, actionX + 4, canvasStartY + 34, 0, 0, 16, 16, 16, 16);
 
         // === CANVAS BACKGROUND ===
         context.fill(canvasStartX - 3, canvasStartY - 3,

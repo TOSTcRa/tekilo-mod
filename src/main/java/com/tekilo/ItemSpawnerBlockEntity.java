@@ -48,6 +48,12 @@ public class ItemSpawnerBlockEntity extends BlockEntity implements ExtendedScree
     private int bossBarColor = 0; // 0=WHITE, 1=RED, 2=YELLOW, 3=GREEN, 4=BLUE, 5=PURPLE, 6=PINK
     private String captureReward = ""; // Item ID for reward, empty = no reward
 
+    // Spawner dependency graph
+    private List<BlockPos> parentSpawners = new ArrayList<>();
+    private int unlockDelay = 300; // Delay in seconds (5 minutes default)
+    private long unlockTime = -1; // World time when spawner will be unlocked
+    private FactionManager.Faction lastRequiredFaction = FactionManager.Faction.NONE; // Track faction to detect ownership changes
+
     private final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
         public int get(int index) {
@@ -102,6 +108,14 @@ public class ItemSpawnerBlockEntity extends BlockEntity implements ExtendedScree
     public static void tick(World world, BlockPos pos, BlockState state, ItemSpawnerBlockEntity blockEntity) {
         if (world.isClient()) return;
 
+        // Check if spawner is unlocked based on parent dependencies
+        if (!blockEntity.isUnlocked(world)) {
+            blockEntity.enabled = false; // Force disable if locked
+            blockEntity.tickCounter = 0; // Reset counter
+            ZoneCaptureManager.tickOnce((ServerWorld) world);
+            return;
+        }
+
         // Всегда инкрементируем счётчик для zone capture
         blockEntity.tickCounter++;
 
@@ -119,12 +133,24 @@ public class ItemSpawnerBlockEntity extends BlockEntity implements ExtendedScree
     }
 
     private void spawnItems(ServerWorld world) {
+        // Check if zone is captured and try to deposit in faction collectors
+        FactionManager.Faction zoneOwner = ZoneCaptureManager.getZoneOwner(pos);
+
         for (int i = 0; i < items.size(); i++) {
             ItemStack stack = items.get(i);
             if (stack.isEmpty()) continue;
 
             int count = useGlobalSettings ? itemCount : stack.getCount();
 
+            // Try to deposit in faction collectors first if zone is captured
+            if (zoneOwner != FactionManager.Faction.NONE) {
+                boolean deposited = FactionCollectorManager.depositItems(world, zoneOwner, stack, count);
+                if (deposited) {
+                    continue; // Items deposited, skip normal spawn
+                }
+            }
+
+            // Fall back to normal spawn if collectors not available or full
             if (spawnInChests) {
                 // Спавн в сундуках в радиусе
                 spawnInNearbyChests(world, stack, count);
@@ -206,6 +232,14 @@ public class ItemSpawnerBlockEntity extends BlockEntity implements ExtendedScree
         view.putString("zoneName", zoneName);
         view.putInt("bossBarColor", bossBarColor);
         view.putString("captureReward", captureReward);
+        // Spawner dependencies
+        view.putInt("parentCount", parentSpawners.size());
+        for (int i = 0; i < parentSpawners.size(); i++) {
+            view.putLong("parent_" + i, parentSpawners.get(i).asLong());
+        }
+        view.putInt("unlockDelay", unlockDelay);
+        view.putLong("unlockTime", unlockTime);
+        view.putString("lastRequiredFaction", lastRequiredFaction.name());
     }
 
     @Override
@@ -227,6 +261,25 @@ public class ItemSpawnerBlockEntity extends BlockEntity implements ExtendedScree
         zoneName = view.getString("zoneName", "");
         bossBarColor = view.getInt("bossBarColor", 0);
         captureReward = view.getString("captureReward", "");
+        // Spawner dependencies
+        parentSpawners = new ArrayList<>();
+        int parentCount = view.getInt("parentCount", 0);
+        for (int i = 0; i < parentCount; i++) {
+            long posLong = view.getLong("parent_" + i, 0);
+            if (posLong != 0) {
+                parentSpawners.add(BlockPos.fromLong(posLong));
+            }
+        }
+        unlockDelay = view.getInt("unlockDelay", 300);
+        unlockTime = view.getLong("unlockTime", -1);
+
+        // Load last required faction
+        String factionName = view.getString("lastRequiredFaction", "NONE");
+        try {
+            lastRequiredFaction = FactionManager.Faction.valueOf(factionName);
+        } catch (IllegalArgumentException e) {
+            lastRequiredFaction = FactionManager.Faction.NONE;
+        }
     }
 
     // Геттеры и сеттеры
@@ -271,6 +324,106 @@ public class ItemSpawnerBlockEntity extends BlockEntity implements ExtendedScree
 
     public String getCaptureReward() { return captureReward; }
     public void setCaptureReward(String value) { this.captureReward = value; markDirty(); }
+
+    // Spawner dependency methods
+    public List<BlockPos> getParentSpawners() { return new ArrayList<>(parentSpawners); }
+
+    public void addParentSpawner(BlockPos pos) {
+        if (!parentSpawners.contains(pos)) {
+            parentSpawners.add(pos);
+            markDirty();
+        }
+    }
+
+    public void addParentSpawner(BlockPos pos, int unlockDelaySeconds) {
+        if (!parentSpawners.contains(pos)) {
+            parentSpawners.add(pos);
+            this.unlockDelay = unlockDelaySeconds;
+            markDirty();
+        }
+    }
+
+    public void removeParentSpawner(BlockPos pos) {
+        parentSpawners.remove(pos);
+        // Reset unlock state when removing parent
+        unlockTime = -1;
+        lastRequiredFaction = FactionManager.Faction.NONE;
+        markDirty();
+    }
+
+    public void clearParentSpawners() {
+        parentSpawners.clear();
+        unlockTime = -1;
+        lastRequiredFaction = FactionManager.Faction.NONE;
+        markDirty();
+    }
+
+    public int getUnlockDelay() { return unlockDelay; }
+    public void setUnlockDelay(int seconds) { this.unlockDelay = seconds; markDirty(); }
+
+    /**
+     * Checks if spawner is unlocked (all parents captured by same faction)
+     */
+    public boolean isUnlocked(World world) {
+        // No parents = always unlocked
+        if (parentSpawners.isEmpty()) {
+            return true;
+        }
+
+        // Check if all parents are captured by the same faction
+        FactionManager.Faction requiredFaction = null;
+        for (BlockPos parentPos : parentSpawners) {
+            BlockEntity be = world.getBlockEntity(parentPos);
+            if (!(be instanceof ItemSpawnerBlockEntity parent)) {
+                continue; // Parent doesn't exist or invalid
+            }
+
+            FactionManager.Faction parentOwner = ZoneCaptureManager.getZoneOwner(parentPos);
+            if (parentOwner == FactionManager.Faction.NONE) {
+                return false; // Parent not captured yet
+            }
+
+            if (requiredFaction == null) {
+                requiredFaction = parentOwner;
+            } else if (requiredFaction != parentOwner) {
+                return false; // Parents owned by different factions
+            }
+        }
+
+        // All parents captured by same faction
+        if (requiredFaction != null) {
+            // Reset timer if faction changed
+            if (lastRequiredFaction != requiredFaction) {
+                lastRequiredFaction = requiredFaction;
+                unlockTime = world.getTime() + (unlockDelay * 20L); // Convert seconds to ticks
+                markDirty();
+                return false;
+            }
+
+            // Start unlock timer if not started
+            if (unlockTime == -1) {
+                unlockTime = world.getTime() + (unlockDelay * 20L); // Convert seconds to ticks
+                markDirty();
+                return false;
+            }
+
+            // Check if unlock time reached
+            if (world.getTime() >= unlockTime) {
+                return true;
+            }
+
+            return false; // Still waiting
+        }
+
+        // No faction owns all parents, reset state
+        if (lastRequiredFaction != FactionManager.Faction.NONE) {
+            lastRequiredFaction = FactionManager.Faction.NONE;
+            unlockTime = -1;
+            markDirty();
+        }
+
+        return false;
+    }
 
     // NamedScreenHandlerFactory implementation
     @Override

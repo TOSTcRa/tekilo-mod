@@ -41,88 +41,89 @@ public class CanvasPaintingItem extends Item {
             return ActionResult.FAIL;
         }
 
-        // Place canvas block on the clicked face
-        BlockPos placePos = blockPos.offset(side);
+        // Получаем размеры картины
+        Integer itemWidth = stack.get(ModDataComponents.CANVAS_WIDTH);
+        Integer itemHeight = stack.get(ModDataComponents.CANVAS_HEIGHT);
+        int canvasWidth = (itemWidth != null) ? itemWidth : 1;
+        int canvasHeight = (itemHeight != null) ? itemHeight : 1;
 
-        // Check if we can place
-        if (!world.getBlockState(placePos).isReplaceable()) {
-            return ActionResult.FAIL;
+        // FACING указывает КУДА СМОТРИТ холст (на игрока)
+        Direction facing = side;
+
+        // Позиция главного блока (левый нижний угол с точки зрения смотрящего)
+        BlockPos masterPos = blockPos.offset(side);
+
+        // Проверяем что можно разместить ВСЕ блоки структуры
+        for (int dy = 0; dy < canvasHeight; dy++) {
+            for (int dx = 0; dx < canvasWidth; dx++) {
+                BlockPos checkPos = CanvasBlock.getMultiblockPos(masterPos, facing, dx, dy);
+
+                // Проверяем что позиция свободна
+                if (!world.getBlockState(checkPos).isReplaceable()) {
+                    return ActionResult.FAIL;
+                }
+
+                // Проверяем что есть стена позади (в противоположном направлении)
+                BlockPos wallPos = checkPos.offset(facing.getOpposite());
+                BlockState wallState = world.getBlockState(wallPos);
+                if (!wallState.isSideSolidFullSquare(world, wallPos, facing)) {
+                    return ActionResult.FAIL;
+                }
+            }
         }
 
         if (!world.isClient()) {
-            // Картина "смотрит" на игрока (противоположно направлению стены)
-            Direction facing = side.getOpposite();
             BlockState canvasState = ModBlocks.CANVAS.getDefaultState().with(CanvasBlock.FACING, facing);
 
-            // Проверяем что можно разместить (есть стена позади)
-            // Стена - это блок на который кликнули (blockPos)
-            BlockState wallState = world.getBlockState(blockPos);
-            if (!wallState.isSideSolidFullSquare(world, blockPos, side)) {
-                return ActionResult.FAIL;
-            }
+            // Размещаем все блоки структуры
+            for (int dy = 0; dy < canvasHeight; dy++) {
+                for (int dx = 0; dx < canvasWidth; dx++) {
+                    BlockPos placePos = CanvasBlock.getMultiblockPos(masterPos, facing, dx, dy);
+                    world.setBlockState(placePos, canvasState);
 
-            world.setBlockState(placePos, canvasState);
+                    if (world.getBlockEntity(placePos) instanceof CanvasBlockEntity canvas) {
+                        canvas.setCanvasSize(canvasWidth, canvasHeight);
 
-            System.out.println("[TekiloMod] CanvasPaintingItem: Placed canvas block at " + placePos);
+                        if (dx == 0 && dy == 0) {
+                            // Главный блок - хранит данные картины
+                            canvas.setMaster(true);
+                            canvas.setOffset(0, 0);
 
-            // Get block entity and set pixels
-            if (world.getBlockEntity(placePos) instanceof CanvasBlockEntity canvas) {
-                int[] pixels = stack.get(ModDataComponents.CANVAS_PIXELS);
-                Integer itemWidth = stack.get(ModDataComponents.CANVAS_WIDTH);
-                Integer itemHeight = stack.get(ModDataComponents.CANVAS_HEIGHT);
-
-                int canvasWidth = (itemWidth != null) ? itemWidth : 1;
-                int canvasHeight = (itemHeight != null) ? itemHeight : 1;
-
-                // Сначала устанавливаем размер
-                canvas.setCanvasSize(canvasWidth, canvasHeight);
-
-                // Debug: проверяем данные из ItemStack
-                int expectedSize = canvasWidth * 16 * canvasHeight * 16;
-                boolean itemHasContent = false;
-                if (pixels != null && pixels.length == expectedSize) {
-                    for (int pixel : pixels) {
-                        if (pixel != 0xFFFFFF) {
-                            itemHasContent = true;
-                            break;
-                        }
-                    }
-                    canvas.setPixels(pixels.clone());
-                    System.out.println("[TekiloMod] CanvasPaintingItem: Set pixels from item, hasContent=" + itemHasContent + ", size=" + canvasWidth + "x" + canvasHeight);
-                } else {
-                    System.out.println("[TekiloMod] CanvasPaintingItem: No valid pixels in item! pixels=" + (pixels != null ? pixels.length : "null") + ", expected=" + expectedSize);
-                }
-
-                // Устанавливаем как нередактируемую - готовая картина
-                canvas.setEditable(false);
-
-                // Принудительно синхронизируем данные с клиентами
-                canvas.markDirty();
-
-                // Отправляем BlockEntityUpdateS2CPacket всем игрокам поблизости
-                if (world instanceof ServerWorld serverWorld) {
-                    BlockEntityUpdateS2CPacket packet = (BlockEntityUpdateS2CPacket) canvas.toUpdatePacket();
-                    if (packet != null) {
-                        System.out.println("[TekiloMod] CanvasPaintingItem: Sending BlockEntityUpdateS2CPacket");
-                        // Отправляем пакет всем игрокам в радиусе видимости
-                        int sentCount = 0;
-                        for (ServerPlayerEntity serverPlayer : serverWorld.getPlayers()) {
-                            if (serverPlayer.squaredDistanceTo(placePos.getX(), placePos.getY(), placePos.getZ()) < 256 * 256) {
-                                serverPlayer.networkHandler.sendPacket(packet);
-                                sentCount++;
+                            int[] pixels = stack.get(ModDataComponents.CANVAS_PIXELS);
+                            int expectedSize = canvasWidth * 16 * canvasHeight * 16;
+                            if (pixels != null && pixels.length == expectedSize) {
+                                canvas.setPixels(pixels.clone());
                             }
-                        }
-                        System.out.println("[TekiloMod] CanvasPaintingItem: Sent packet to " + sentCount + " players");
-                    } else {
-                        System.out.println("[TekiloMod] CanvasPaintingItem: toUpdatePacket returned null!");
-                    }
-                    serverWorld.getChunkManager().markForUpdate(placePos);
-                }
 
-                // Обновляем визуал
-                world.updateListeners(placePos, canvasState, canvasState, net.minecraft.block.Block.NOTIFY_ALL);
-            } else {
-                System.out.println("[TekiloMod] CanvasPaintingItem: Failed to get CanvasBlockEntity at " + placePos);
+                            System.out.println("[TekiloMod] CanvasPaintingItem: Placed MASTER canvas at " + placePos);
+                        } else {
+                            // Зависимый блок - ссылается на главный
+                            canvas.setMaster(false);
+                            canvas.setMasterPos(masterPos);
+                            canvas.setOffset(dx, dy);
+
+                            System.out.println("[TekiloMod] CanvasPaintingItem: Placed SLAVE canvas at " + placePos + " offset(" + dx + "," + dy + ")");
+                        }
+
+                        canvas.setEditable(false);
+                        canvas.markDirty();
+
+                        // Синхронизируем с клиентами
+                        if (world instanceof ServerWorld serverWorld) {
+                            BlockEntityUpdateS2CPacket packet = (BlockEntityUpdateS2CPacket) canvas.toUpdatePacket();
+                            if (packet != null) {
+                                for (ServerPlayerEntity serverPlayer : serverWorld.getPlayers()) {
+                                    if (serverPlayer.squaredDistanceTo(placePos.getX(), placePos.getY(), placePos.getZ()) < 256 * 256) {
+                                        serverPlayer.networkHandler.sendPacket(packet);
+                                    }
+                                }
+                            }
+                            serverWorld.getChunkManager().markForUpdate(placePos);
+                        }
+
+                        world.updateListeners(placePos, canvasState, canvasState, net.minecraft.block.Block.NOTIFY_ALL);
+                    }
+                }
             }
 
             // Consume item if not in creative mode

@@ -24,7 +24,8 @@ public class MaskCommand {
     private static final Map<UUID, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
     private static final long MASK_DURATION_MS = 300000; // 5 минут
     private static final long COOLDOWN_MS = 600000; // 10 минут кулдаун
-    private static ScheduledExecutorService maskScheduler;
+    private static volatile ScheduledExecutorService maskScheduler;
+    private static final Object SCHEDULER_LOCK = new Object();
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register(MaskCommand::registerCommand);
@@ -111,13 +112,18 @@ public class MaskCommand {
     }
 
     private static void scheduleMaskRemoval(MinecraftServer server, UUID playerId, FactionManager.Faction faction) {
-        // Initialize scheduler if needed
+        // Initialize scheduler if needed (thread-safe)
         if (maskScheduler == null || maskScheduler.isShutdown()) {
-            maskScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "TekiloMod-MaskScheduler");
-                t.setDaemon(true);
-                return t;
-            });
+            synchronized (SCHEDULER_LOCK) {
+                // Double-check inside synchronized block
+                if (maskScheduler == null || maskScheduler.isShutdown()) {
+                    maskScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                        Thread t = new Thread(r, "TekiloMod-MaskScheduler");
+                        t.setDaemon(true);
+                        return t;
+                    });
+                }
+            }
         }
 
         // Cancel any existing task for this player

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GGG",
+    "GPG",
+    "GGG"
+  ],
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "P": "minecraft:paper"
+  },
+  "result": {
+    "id": "tekilo:dollar",
+    "count": 4
+  }
+}

@@ -11,6 +11,7 @@ public class TekiloMod implements ModInitializer {
 		ModDataComponents.initialize();
 		ModBlocks.initialize();
 		ModBlockEntities.initialize();
+		ModStatusEffects.initialize();
 		ModItems.initialize();
 		ModItemGroups.initialize();
 		ModScreenHandlers.initialize();
@@ -38,6 +39,12 @@ public class TekiloMod implements ModInitializer {
 
 		// Регистрация пакета настроек Zone Capture (C2S)
 		PayloadTypeRegistry.playC2S().register(ZoneSettingsPayload.ID, ZoneSettingsPayload.CODEC);
+
+		// Регистрация пакета визуализации зон (S2C)
+		PayloadTypeRegistry.playS2C().register(ZoneVisualizationPayload.ID, ZoneVisualizationPayload.CODEC);
+
+		// Регистрация пакета связывания спавнеров (C2S)
+		PayloadTypeRegistry.playC2S().register(SpawnerLinkPayload.ID, SpawnerLinkPayload.CODEC);
 
 		// Регистрация обработчиков сетевых пакетов
 		com.tekilo.network.ServerNetworkHandler.register();

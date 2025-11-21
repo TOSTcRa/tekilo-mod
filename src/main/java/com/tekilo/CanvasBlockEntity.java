@@ -20,13 +20,18 @@ public class CanvasBlockEntity extends BlockEntity {
     private boolean editable = true; // Если false - картина завершена, не открывается GUI
     private boolean sizeChosen = false; // Был ли выбран размер холста
 
+    // Мультиблочная структура
+    private boolean isMaster = true; // true = главный блок (хранит данные), false = зависимый
+    private BlockPos masterPos = null; // Позиция главного блока (для зависимых)
+    private int offsetX = 0; // Смещение этого блока относительно главного (по горизонтали вдоль стены)
+    private int offsetY = 0; // Смещение по вертикали
+
     public CanvasBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CANVAS, pos, state);
         // Инициализируем белым цветом (по умолчанию 16x16)
         for (int i = 0; i < pixels.length; i++) {
             pixels[i] = 0xFFFFFF; // Белый
         }
-        System.out.println("[TekiloMod] CanvasBlockEntity created at " + pos + " (empty/white pixels)");
     }
 
     public int getPixel(int x, int y) {
@@ -53,18 +58,6 @@ public class CanvasBlockEntity extends BlockEntity {
         if (newPixels.length == expectedSize) {
             this.pixels = newPixels;
             markDirty();
-
-            // Debug
-            boolean hasContent = false;
-            for (int pixel : newPixels) {
-                if (pixel != 0xFFFFFF) {
-                    hasContent = true;
-                    break;
-                }
-            }
-            System.out.println("[TekiloMod] CanvasBlockEntity.setPixels at " + pos + ", hasContent=" + hasContent + ", size=" + canvasWidth + "x" + canvasHeight);
-        } else {
-            System.out.println("[TekiloMod] CanvasBlockEntity.setPixels REJECTED: expected " + expectedSize + " but got " + newPixels.length);
         }
     }
 
@@ -90,13 +83,45 @@ public class CanvasBlockEntity extends BlockEntity {
         }
 
         markDirty();
-        System.out.println("[TekiloMod] CanvasBlockEntity.setCanvasSize at " + pos + " to " + width + "x" + height + " blocks (" + (width*16) + "x" + (height*16) + " pixels)");
     }
 
     public boolean isEditable() { return editable; }
     public void setEditable(boolean editable) {
         this.editable = editable;
         markDirty();
+    }
+
+    // Мультиблочные методы
+    public boolean isMaster() { return isMaster; }
+    public void setMaster(boolean master) {
+        this.isMaster = master;
+        markDirty();
+    }
+
+    public BlockPos getMasterPos() { return masterPos; }
+    public void setMasterPos(BlockPos pos) {
+        this.masterPos = pos;
+        markDirty();
+    }
+
+    public int getOffsetX() { return offsetX; }
+    public int getOffsetY() { return offsetY; }
+    public void setOffset(int x, int y) {
+        this.offsetX = x;
+        this.offsetY = y;
+        markDirty();
+    }
+
+    // Получить главный BlockEntity (для зависимых блоков)
+    @Nullable
+    public CanvasBlockEntity getMasterEntity() {
+        if (isMaster) return this;
+        if (masterPos == null || world == null) return null;
+        BlockEntity be = world.getBlockEntity(masterPos);
+        if (be instanceof CanvasBlockEntity master) {
+            return master;
+        }
+        return null;
     }
 
     @Override
@@ -108,15 +133,15 @@ public class CanvasBlockEntity extends BlockEntity {
         view.putBoolean("editable", editable);
         view.putBoolean("sizeChosen", sizeChosen);
 
-        // Debug: логируем запись данных
-        boolean hasContent = false;
-        for (int pixel : pixels) {
-            if (pixel != 0xFFFFFF) {
-                hasContent = true;
-                break;
-            }
+        // Мультиблочные данные
+        view.putBoolean("isMaster", isMaster);
+        view.putInt("offsetX", offsetX);
+        view.putInt("offsetY", offsetY);
+        if (masterPos != null) {
+            view.putInt("masterX", masterPos.getX());
+            view.putInt("masterY", masterPos.getY());
+            view.putInt("masterZ", masterPos.getZ());
         }
-        System.out.println("[TekiloMod] CanvasBlockEntity.writeData at " + pos + ", hasContent=" + hasContent + ", editable=" + editable + ", size=" + canvasWidth + "x" + canvasHeight);
     }
 
     @Override
@@ -129,6 +154,21 @@ public class CanvasBlockEntity extends BlockEntity {
         editable = view.getBoolean("editable", true);
         sizeChosen = view.getBoolean("sizeChosen", false);
 
+        // Мультиблочные данные
+        isMaster = view.getBoolean("isMaster", true);
+        offsetX = view.getInt("offsetX", 0);
+        offsetY = view.getInt("offsetY", 0);
+        // Проверяем наличие masterPos через Optional
+        var optMasterX = view.getOptionalInt("masterX");
+        if (optMasterX.isPresent()) {
+            int mx = optMasterX.get();
+            int my = view.getInt("masterY", 0);
+            int mz = view.getInt("masterZ", 0);
+            masterPos = new BlockPos(mx, my, mz);
+        } else {
+            masterPos = null;
+        }
+
         if (canvasWidth < 1) canvasWidth = 1;
         if (canvasHeight < 1) canvasHeight = 1;
         if (canvasWidth > 6) canvasWidth = 6;
@@ -140,9 +180,7 @@ public class CanvasBlockEntity extends BlockEntity {
         view.getOptionalIntArray("pixels").ifPresent(loadedPixels -> {
             if (loadedPixels.length == expectedSize) {
                 pixels = loadedPixels;
-                System.out.println("[TekiloMod] CanvasBlockEntity.readData at " + pos + " - loaded " + loadedPixels.length + " pixels for " + canvasWidth + "x" + canvasHeight + " canvas");
             } else {
-                System.out.println("[TekiloMod] CanvasBlockEntity.readData at " + pos + " - invalid pixels length: " + loadedPixels.length + ", expected " + expectedSize);
                 // Пересоздаём массив правильного размера
                 pixels = new int[expectedSize];
                 for (int i = 0; i < expectedSize; i++) {
@@ -152,38 +190,22 @@ public class CanvasBlockEntity extends BlockEntity {
         });
 
         if (!hadPixels) {
-            System.out.println("[TekiloMod] CanvasBlockEntity.readData at " + pos + " - NO pixels in data!");
             pixels = new int[expectedSize];
             for (int i = 0; i < expectedSize; i++) {
                 pixels[i] = 0xFFFFFF;
             }
         }
-
-        // Debug: проверяем что загрузили
-        boolean hasContent = false;
-        for (int pixel : pixels) {
-            if (pixel != 0xFFFFFF) {
-                hasContent = true;
-                break;
-            }
-        }
-        System.out.println("[TekiloMod] CanvasBlockEntity.readData result: hasContent=" + hasContent + ", editable=" + editable + ", size=" + canvasWidth + "x" + canvasHeight);
     }
 
     @Nullable
     @Override
     public Packet<ClientPlayPacketListener> toUpdatePacket() {
-        System.out.println("[TekiloMod] CanvasBlockEntity.toUpdatePacket called at " + pos);
         return BlockEntityUpdateS2CPacket.create(this);
     }
 
     @Override
     public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
-        System.out.println("[TekiloMod] CanvasBlockEntity.toInitialChunkDataNbt called at " + pos);
-        // Используем createNbtWithIdentifyingData, который вызывает writeFullData
-        NbtCompound nbt = createNbtWithIdentifyingData(registries);
-        System.out.println("[TekiloMod] toInitialChunkDataNbt result keys: " + nbt.getKeys());
-        return nbt;
+        return createNbtWithIdentifyingData(registries);
     }
 
     @Override
@@ -195,14 +217,14 @@ public class CanvasBlockEntity extends BlockEntity {
         view.putBoolean("editable", editable);
         view.putBoolean("sizeChosen", sizeChosen);
 
-        // Debug: логируем запись полных данных
-        boolean hasContent = false;
-        for (int pixel : pixels) {
-            if (pixel != 0xFFFFFF) {
-                hasContent = true;
-                break;
-            }
+        // Мультиблочные данные
+        view.putBoolean("isMaster", isMaster);
+        view.putInt("offsetX", offsetX);
+        view.putInt("offsetY", offsetY);
+        if (masterPos != null) {
+            view.putInt("masterX", masterPos.getX());
+            view.putInt("masterY", masterPos.getY());
+            view.putInt("masterZ", masterPos.getZ());
         }
-        System.out.println("[TekiloMod] CanvasBlockEntity.writeFullData at " + pos + ", hasContent=" + hasContent + ", editable=" + editable + ", size=" + canvasWidth + "x" + canvasHeight);
     }
 }

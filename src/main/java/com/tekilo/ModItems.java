@@ -75,6 +75,18 @@ public class ModItems {
 		new Item.Settings().maxCount(64)
 	);
 
+	public static final Item JOINT = register(
+		"joint",
+		JointItem::new,
+		new Item.Settings().maxCount(16).rarity(Rarity.UNCOMMON)
+	);
+
+	public static final Item SPAWNER_LINKER = register(
+		"spawner_linker",
+		SpawnerLinkerItem::new,
+		new Item.Settings().maxCount(1).rarity(Rarity.RARE)
+	);
+
 	public static final Item CANVAS_PAINTING = register(
 		"canvas_painting",
 		CanvasPaintingItem::new,

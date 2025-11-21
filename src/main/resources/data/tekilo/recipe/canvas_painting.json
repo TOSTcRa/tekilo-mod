@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "tekilo:canvas",
+    "minecraft:glow_ink_sac"
+  ],
+  "result": {
+    "id": "tekilo:canvas_painting",
+    "count": 1
+  }
+}

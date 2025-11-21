@@ -41,6 +41,8 @@ public class ModItemGroups {
             entries.add(ModItems.MUSIC_DISC_SOUND_2);
             entries.add(ModItems.DOLLAR);
             entries.add(ModItems.WEED_CLUMP);
+            entries.add(ModItems.JOINT);
+            entries.add(ModItems.SPAWNER_LINKER);
             entries.add(ModItems.CANVAS_PAINTING);
 
             // Blocks
@@ -51,6 +53,8 @@ public class ModItemGroups {
             entries.add(ModBlocks.STALIN_STATUE);
             entries.add(ModBlocks.ITEM_SPAWNER);
             entries.add(ModBlocks.CANVAS);
+            entries.add(ModBlocks.COMMUNIST_COLLECTOR);
+            entries.add(ModBlocks.CAPITALIST_COLLECTOR);
         });
 
         System.out.println("[TekiloMod] Item groups initialized!");

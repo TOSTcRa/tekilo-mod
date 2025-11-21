@@ -51,9 +51,6 @@ public class ServerNetworkHandler {
                             ServerPlayNetworking.send(player, broadcastPayload);
                         }
                     }
-
-                    System.out.println("[TekiloMod] Broadcasting animation '" + payload.animationName()
-                        + "' from player " + sender.getName().getString() + " to all clients");
                 });
             }
         );
@@ -96,13 +93,11 @@ public class ServerNetworkHandler {
 
                     // Validate dimensions
                     if (payload.width() < 1 || payload.width() > 6 || payload.height() < 1 || payload.height() > 6) {
-                        System.err.println("[TekiloMod] Invalid canvas size from " + player.getName().getString());
                         return;
                     }
 
                     // Check proximity
                     if (!isWithinDistance(player, payload.pos())) {
-                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " too far from canvas at " + payload.pos());
                         return;
                     }
 
@@ -120,8 +115,6 @@ public class ServerNetworkHandler {
                                 canvas.isSizeChosen()
                             );
                             ServerPlayNetworking.send(player, openPayload);
-
-                            System.out.println("[TekiloMod] Canvas size set to " + payload.width() + "x" + payload.height() + " at " + payload.pos());
                         }
                     }
                 });
@@ -141,19 +134,16 @@ public class ServerNetworkHandler {
 
                     // Validate pixel array
                     if (payload.pixels() == null || payload.pixels().length == 0) {
-                        System.err.println("[TekiloMod] Invalid canvas payload from " + player.getName().getString());
                         return;
                     }
 
                     // Validate dimensions (already checked in payload deserialization, but double-check)
                     if (payload.canvasWidth() < 1 || payload.canvasWidth() > 6 || payload.canvasHeight() < 1 || payload.canvasHeight() > 6) {
-                        System.err.println("[TekiloMod] Invalid canvas dimensions from " + player.getName().getString());
                         return;
                     }
 
                     // Check proximity
                     if (!isWithinDistance(player, payload.pos())) {
-                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " too far from canvas at " + payload.pos());
                         return;
                     }
 
@@ -161,13 +151,11 @@ public class ServerNetworkHandler {
                     if (be instanceof CanvasBlockEntity canvas) {
                         int expectedSize = payload.canvasWidth() * 16 * payload.canvasHeight() * 16;
                         if (payload.pixels().length != expectedSize) {
-                            System.err.println("[TekiloMod] Invalid canvas pixel count: " + payload.pixels().length + ", expected " + expectedSize);
                             return;
                         }
 
                         // Проверяем что размеры совпадают с BlockEntity
                         if (canvas.getCanvasWidth() != payload.canvasWidth() || canvas.getCanvasHeight() != payload.canvasHeight()) {
-                            System.err.println("[TekiloMod] Canvas size mismatch: payload=" + payload.canvasWidth() + "x" + payload.canvasHeight() + ", entity=" + canvas.getCanvasWidth() + "x" + canvas.getCanvasHeight());
                             return;
                         }
 
@@ -183,8 +171,6 @@ public class ServerNetworkHandler {
 
                         // Уведомляем о визуальном обновлении
                         world.updateListeners(payload.pos(), canvas.getCachedState(), canvas.getCachedState(), 3);
-
-                        System.out.println("[TekiloMod] Canvas updated at " + payload.pos() + " by " + player.getName().getString() + " size=" + payload.canvasWidth() + "x" + payload.canvasHeight());
 
                         // Создаём и выдаём игроку Canvas Painting с нарисованным изображением
                         ItemStack paintingStack = CanvasPaintingItem.createWithPixels(payload.pixels(), payload.canvasWidth(), payload.canvasHeight());
@@ -204,8 +190,6 @@ public class ServerNetworkHandler {
 
                         // Уведомляем игрока
                         player.sendMessage(Text.translatable("message.tekilo.canvas.painting_created"), true);
-
-                        System.out.println("[TekiloMod] Canvas painting created for " + player.getName().getString() + " size=" + payload.canvasWidth() + "x" + payload.canvasHeight());
                     }
                 });
             }
@@ -222,7 +206,6 @@ public class ServerNetworkHandler {
                     // Check operator permission
                     if (!canEditItemSpawner(player)) {
                         player.sendMessage(Text.literal("§cУ вас нет прав для изменения настроек Item Spawner!"), false);
-                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " tried to edit Item Spawner without permission");
                         return;
                     }
 
@@ -233,7 +216,6 @@ public class ServerNetworkHandler {
                     if (payload.radius() < 10 || payload.radius() > 500 ||
                         payload.spawnInterval() < 200 || payload.spawnInterval() > 72000 ||
                         payload.itemCount() < 1 || payload.itemCount() > 64) {
-                        System.err.println("[TekiloMod] Invalid Item Spawner settings from " + player.getName().getString());
                         return;
                     }
 
@@ -246,13 +228,6 @@ public class ServerNetworkHandler {
                         spawner.setSpawnInChests(payload.spawnInChests());
                         spawner.setUseGlobalSettings(payload.useGlobalSettings());
                         spawner.setEnabled(payload.enabled());
-
-                        System.out.println("[TekiloMod] Item Spawner settings updated at " + payload.pos()
-                            + " by " + player.getName().getString()
-                            + " - radius=" + payload.radius()
-                            + ", interval=" + payload.spawnInterval()
-                            + ", count=" + payload.itemCount()
-                            + ", enabled=" + payload.enabled());
                     }
                 });
             }
@@ -269,7 +244,6 @@ public class ServerNetworkHandler {
                     // Check operator permission
                     if (!canEditItemSpawner(player)) {
                         player.sendMessage(Text.literal("§cУ вас нет прав для изменения настроек зоны!"), false);
-                        System.err.println("[TekiloMod] Player " + player.getName().getString() + " tried to edit Zone settings without permission");
                         return;
                     }
 
@@ -278,11 +252,9 @@ public class ServerNetworkHandler {
 
                     // Validate string lengths to prevent DoS
                     if (payload.zoneName() != null && payload.zoneName().length() > MAX_STRING_LENGTH) {
-                        System.err.println("[TekiloMod] Zone name too long from " + player.getName().getString());
                         return;
                     }
                     if (payload.captureReward() != null && payload.captureReward().length() > MAX_STRING_LENGTH) {
-                        System.err.println("[TekiloMod] Capture reward too long from " + player.getName().getString());
                         return;
                     }
 
@@ -291,7 +263,6 @@ public class ServerNetworkHandler {
                         payload.baseCaptureTime() < 1200 || payload.baseCaptureTime() > 72000 ||
                         payload.minCaptureTime() < 600 || payload.minCaptureTime() > payload.baseCaptureTime() ||
                         payload.bossBarColor() < 0 || payload.bossBarColor() > 6) {
-                        System.err.println("[TekiloMod] Invalid Zone settings from " + player.getName().getString());
                         return;
                     }
 
@@ -305,16 +276,85 @@ public class ServerNetworkHandler {
                         spawner.setZoneName(payload.zoneName());
                         spawner.setBossBarColor(payload.bossBarColor());
                         spawner.setCaptureReward(payload.captureReward());
+                    }
+                });
+            }
+        );
 
-                        System.out.println("[TekiloMod] Zone settings updated at " + payload.pos()
-                            + " by " + player.getName().getString()
-                            + " - zoneRadius=" + payload.zoneRadius()
-                            + ", baseCaptureTime=" + payload.baseCaptureTime()
-                            + ", minCaptureTime=" + payload.minCaptureTime()
-                            + ", zoneEnabled=" + payload.zoneEnabled()
-                            + ", zoneName=" + payload.zoneName()
-                            + ", bossBarColor=" + payload.bossBarColor()
-                            + ", captureReward=" + payload.captureReward());
+        // Обработчик связывания спавнеров
+        ServerPlayNetworking.registerGlobalReceiver(
+            SpawnerLinkPayload.ID,
+            (payload, context) -> {
+                context.server().execute(() -> {
+                    ServerPlayerEntity player = context.player();
+                    if (player == null) return;
+
+                    ServerWorld world = player.getEntityWorld();
+                    if (world == null) return;
+
+                    // Validate unlock delay (0, 15, 30, 45, 60 minutes in seconds)
+                    int delay = payload.unlockDelaySeconds();
+                    if (delay != 0 && delay != 15 * 60 && delay != 30 * 60 && delay != 45 * 60 && delay != 60 * 60) {
+                        return;
+                    }
+
+                    // Check if parent and child are not the same
+                    if (payload.parentPos().equals(payload.childPos())) {
+                        player.sendMessage(
+                            Text.translatable("item.tekilo.spawner_linker.same_spawner")
+                            .formatted(net.minecraft.util.Formatting.RED),
+                            false
+                        );
+                        return;
+                    }
+
+                    // Check if both spawners exist
+                    BlockEntity parentBe = world.getBlockEntity(payload.parentPos());
+                    BlockEntity childBe = world.getBlockEntity(payload.childPos());
+
+                    if (!(parentBe instanceof ItemSpawnerBlockEntity) || !(childBe instanceof ItemSpawnerBlockEntity childSpawner)) {
+                        player.sendMessage(
+                            Text.translatable("item.tekilo.spawner_linker.parent_not_found")
+                            .formatted(net.minecraft.util.Formatting.RED),
+                            false
+                        );
+                        return;
+                    }
+
+                    // Check distance between spawners (prevent abuse)
+                    double distance = Math.sqrt(payload.parentPos().getSquaredDistance(payload.childPos()));
+                    if (distance > 1000) {
+                        player.sendMessage(
+                            Text.literal("§cSpawners are too far apart! Maximum distance: 1000 blocks"),
+                            false
+                        );
+                        return;
+                    }
+
+                    // Link the spawners
+                    childSpawner.addParentSpawner(payload.parentPos(), delay);
+
+                    // Send success message
+                    player.sendMessage(
+                        Text.translatable("item.tekilo.spawner_linker.linked",
+                            payload.parentPos().getX(), payload.parentPos().getY(), payload.parentPos().getZ(),
+                            payload.childPos().getX(), payload.childPos().getY(), payload.childPos().getZ())
+                        .formatted(net.minecraft.util.Formatting.GREEN),
+                        false
+                    );
+
+                    // Spawn particles at both locations
+                    for (int i = 0; i < 10; i++) {
+                        double x = payload.parentPos().getX() + 0.5 + (world.random.nextDouble() - 0.5);
+                        double y = payload.parentPos().getY() + 0.5 + world.random.nextDouble();
+                        double z = payload.parentPos().getZ() + 0.5 + (world.random.nextDouble() - 0.5);
+                        world.spawnParticles(ParticleTypes.END_ROD, x, y, z, 1, 0, 0, 0, 0);
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        double x = payload.childPos().getX() + 0.5 + (world.random.nextDouble() - 0.5);
+                        double y = payload.childPos().getY() + 0.5 + world.random.nextDouble();
+                        double z = payload.childPos().getZ() + 0.5 + (world.random.nextDouble() - 0.5);
+                        world.spawnParticles(ParticleTypes.END_ROD, x, y, z, 1, 0, 0, 0, 0);
                     }
                 });
             }
